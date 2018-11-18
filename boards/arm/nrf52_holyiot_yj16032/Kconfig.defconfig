@@ -1,0 +1,15 @@
+# Kconfig - Holyiot YJ-16032 board configuration
+#
+# Copyright (c) 2018 Henrik Brix Andersen <henrik@brixandersen.dk>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_NRF52_HOLYIOT_YJ16032
+
+config BOARD
+	default "nrf52_holyiot_yj16032"
+
+config GPIO_AS_PINRESET
+	default n
+
+endif # BOARD_NRF52_HOLYIOT_YJ16032

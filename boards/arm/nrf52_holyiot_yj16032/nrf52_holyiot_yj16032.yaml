@@ -1,0 +1,9 @@
+identifier: nrf52_holyiot_yj16032
+name: Holyiot YJ-16032
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 64
+flash: 512
