@@ -1,0 +1,29 @@
+# Copyright (c) 2019 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_ADAFRUIT_DATA_LOGGER_SHIELD
+
+if DISK_ACCESS
+
+config SPI
+	default y
+
+config DISK_ACCESS_SDHC
+	default y
+
+config DISK_ACCESS_SPI_SDHC
+	default y
+
+endif # DISK_ACCESS
+
+if COUNTER
+
+config I2C
+	default y
+
+config COUNTER_PCF8523
+	default y
+
+endif # COUNTER
+
+endif # SHIELD_ADAFRUIT_DATA_LOGGER_SHIELD
