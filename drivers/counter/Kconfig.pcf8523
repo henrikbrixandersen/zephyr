@@ -1,0 +1,21 @@
+# NXP PCF8523 RTC
+
+# Copyright (c) 2019 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+config COUNTER_PCF8523
+	bool "NXP PCF8523 RTC driver"
+	depends on I2C && HAS_DTS_I2C
+	help
+	  Enable the NXP PCF8523 RTC driver.
+
+if COUNTER_PCF8523
+
+config COUNTER_PCF8523_INIT_PRIORITY
+	int "Init priority"
+	default 60
+	help
+	  PCF8523 device driver initialization priority. This driver
+	  must be initialized after the I2C controller driver.
+
+endif # COUNTER_PCF8523

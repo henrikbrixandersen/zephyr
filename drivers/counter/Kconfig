@@ -38,4 +38,6 @@ source "drivers/counter/Kconfig.xec"
 
 source "drivers/counter/Kconfig.mcux_lptmr"
 
+source "drivers/counter/Kconfig.pcf8523"
+
 endif # COUNTER
