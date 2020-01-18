@@ -1,0 +1,12 @@
+# Xilinx Zynq-7000 series
+
+# Copyright (c) 2020 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_XILINX_ZYNQ_7000
+	bool
+	select CPU_CORTEX_A9
+	select GIC_V1
+	select MULTI_LEVEL_INTERRUPTS
+	select 2ND_LEVEL_INTERRUPTS
+	select PLATFORM_SPECIFIC_INIT

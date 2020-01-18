@@ -1,0 +1,75 @@
+/*
+ * Copyright (c) 2020 Henrik Brix Andersen <henrik@brixandersen.dk>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <arm/armv7-a.dtsi>
+#include <dt-bindings/interrupt-controller/arm-gic.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a9";
+			reg = <0>;
+		};
+
+		cpu@1 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a9";
+			reg = <1>;
+		};
+	};
+
+	soc {
+		interrupt-parent = <&gic>;
+
+		/* TODO */
+		flash0: flash@c0000000 {
+			compatible = "soc-nv-flash";
+			reg = <0xc0000000 DT_SIZE_K(64)>;
+		};
+
+		/* TODO */
+		sram0: memory@0 {
+			compatible = "mmio-sram";
+			reg = <0 DT_SIZE_K(256)>;
+		};
+
+		gic: interrupt-controller@f8f01000 {
+			compatible = "arm,gic";
+			reg = <0xf8f01000 0x1000>, <0xf8f00100 0x100>;
+			interrupt-controller;
+			#interrupt-cells = <4>;
+			label = "GIC";
+			status = "okay";
+		};
+
+		uart0: serial@e0000000 {
+			compatible = "xlnx,xuartps";
+			reg = <0xe0000000 0x1000>;
+			status = "disabled";
+			/* clocks = <&clkc 23>, <&clkc 40>; */
+			/* clock-names = "uart_clk", "pclk"; */
+			interrupts = <GIC_SPI 27 IRQ_TYPE_LEVEL
+					IRQ_DEFAULT_PRIORITY>;
+			label = "UART_0";
+		};
+
+		uart1: serial@e0001000 {
+			compatible = "xlnx,xuartps";
+			reg = <0xe0001000 0x1000>;
+			status = "disabled";
+			/* clocks = <&clkc 24>, <&clkc 41>; */
+			/* clock-names = "uart_clk", "pclk"; */
+			interrupts = <GIC_SPI 50 IRQ_TYPE_LEVEL
+					IRQ_DEFAULT_PRIORITY>;
+			label = "UART_1";
+		};
+	};
+};
