@@ -1,0 +1,11 @@
+identifier: qemu_cortex_a9
+name: QEMU Emulation for Cortex-A9
+type: qemu
+simulation: qemu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 64
+flash: 256

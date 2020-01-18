@@ -1,0 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_QEMU_CORTEX_A9
+	bool "Cortex-A9 Emulation (QEMU)"
+	depends on SOC_XILINX_ZYNQ_7010
+	select QEMU_TARGET
