@@ -32,7 +32,10 @@
 #include <arch/arm/aarch32/nmi.h>
 #include <arch/arm/aarch32/asm_inline.h>
 
-#ifdef CONFIG_CPU_CORTEX_M
+#if defined(CONFIG_CPU_CORTEX_A)
+#include <arch/arm/aarch32/cortex_a/cpu.h>
+#include <arch/arm/aarch32/cortex_a/sys_io.h>
+#elif defined(CONFIG_CPU_CORTEX_M)
 #include <arch/arm/aarch32/cortex_m/cpu.h>
 #include <arch/arm/aarch32/cortex_m/memory_map.h>
 #include <arch/common/sys_io.h>

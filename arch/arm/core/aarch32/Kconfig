@@ -8,6 +8,12 @@ config CPU_CORTEX
 	help
 	  This option signifies the use of a CPU of the Cortex family.
 
+config CPU_CORTEX_A
+	bool
+	select CPU_CORTEX
+	help
+	  This option signifies the use of a CPU of the Cortex-A family.
+
 config CPU_CORTEX_M
 	bool
 	select CPU_CORTEX
@@ -267,6 +273,7 @@ config FP_SOFTABI
 
 endchoice
 
+source "arch/arm/core/aarch32/cortex_a/Kconfig"
 source "arch/arm/core/aarch32/cortex_m/Kconfig"
 source "arch/arm/core/aarch32/cortex_r/Kconfig"
 

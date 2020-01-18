@@ -4,7 +4,9 @@
 # KConfig'uration and sets this to GCC_M_CPU
 
 if("${ARCH}" STREQUAL "arm")
-  if    (CONFIG_CPU_CORTEX_M0)
+  if    (CONFIG_CPU_CORTEX_A9)
+    set(GCC_M_CPU cortex-a9)
+  elseif(CONFIG_CPU_CORTEX_M0)
     set(GCC_M_CPU cortex-m0)
   elseif(CONFIG_CPU_CORTEX_M0PLUS)
     set(GCC_M_CPU cortex-m0plus)

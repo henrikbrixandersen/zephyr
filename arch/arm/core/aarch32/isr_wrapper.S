@@ -114,6 +114,8 @@ _idle_state_cleared:
 	str r1, [r2, #_kernel_offset_to_idle]
 	bl z_sys_power_save_idle_exit
 _idle_state_cleared:
+#elif defined(CONFIG_ARMV7_A)
+	/* TODO */
 #else
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
@@ -140,6 +142,8 @@ _idle_state_cleared:
 	 * offset 0 of the table.
 	 */
 	mov r0, #0
+#elif defined(CONFIG_ARMV7_A)
+	/* TODO */
 #else
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
@@ -178,6 +182,8 @@ _idle_state_cleared:
 	 * from the process stack to return to the correct location
 	 * so there is no need to do anything here.
 	 */
+#elif defined(CONFIG_ARMV7_A)
+	/* TODO */
 #else
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */

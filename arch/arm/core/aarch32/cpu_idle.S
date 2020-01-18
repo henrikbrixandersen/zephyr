@@ -69,6 +69,8 @@ SECTION_FUNC(TEXT, arch_cpu_idle)
 	/* clear BASEPRI so wfi is awakened by incoming interrupts */
 	eors.n r0, r0
 	msr BASEPRI, r0
+#elif defined(CONFIG_ARMV7_A)
+	/* TODO */
 #else
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
@@ -123,6 +125,8 @@ _irq_disabled:
 
 	msr BASEPRI, r0
 	cpsie i
+#elif defined(CONFIG_ARMV7_A)
+	/* TODO */
 #else
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */

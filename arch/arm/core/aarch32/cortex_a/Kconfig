@@ -1,0 +1,47 @@
+# ARM Cortex-A platform configuration options
+
+# Copyright (c) 2020 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+# NOTE: We have the specific core implementations first and outside of the
+# if CPU_CORTEX_M block so that SoCs can select which core they are using
+# without having to select all the options related to that core.  Everything
+# else is captured inside the if CPU_CORTEX_M block so they are not exposed
+# if one select a differnet ARM Cortex Family (Cortex-M or Cortex-R)
+
+config CPU_CORTEX_A9
+	bool
+	select CPU_CORTEX_A
+	select ARMV7_A
+	help
+	  This option signifies the use of a Cortex-A9 CPU
+
+if CPU_CORTEX_A
+
+config ARMV7_A
+	bool
+	select ATOMIC_OPERATIONS_BUILTIN
+	select ISA_ARM
+	help
+	  This option signifies the use of an ARMv7-A processor
+	  implementation.
+
+	  From https://developer.arm.com/products/architecture/cpu-architecture/a-profile:
+	  The Armv7-A architecture introduced the concept of architecture
+	  profiles which has been carried onwards into the Armv8 architectures.
+	  It implements a traditional Arm architecture with multiple modes,
+	  supports a Virtual Memory System Architecture (VMSA) based on a Memory
+	  Management Unit (MMU), and supports the Arm (A32) and Thumb (T32)
+	  instruction sets.
+
+config RUNTIME_NMI
+	default y
+
+config GEN_ISR_TABLES
+	default y
+
+config GEN_IRQ_VECTOR_TABLE
+	default n
+
+endif # CPU_CORTEX_A
+

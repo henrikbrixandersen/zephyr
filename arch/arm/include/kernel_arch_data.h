@@ -29,7 +29,10 @@
 #define STACK_ROUND_UP(x) ROUND_UP(x, STACK_ALIGN_SIZE)
 #define STACK_ROUND_DOWN(x) ROUND_DOWN(x, STACK_ALIGN_SIZE)
 
-#ifdef CONFIG_CPU_CORTEX_M
+#if CONFIG_CPU_CORTEX_A
+#include <aarch32/cortex_a/stack.h>
+#include <aarch32/cortex_a/exc.h>
+#elif defined(CONFIG_CPU_CORTEX_M)
 #include <aarch32/cortex_m/stack.h>
 #include <aarch32/cortex_m/exc.h>
 #elif defined(CONFIG_CPU_CORTEX_R)

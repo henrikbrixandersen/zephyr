@@ -108,6 +108,8 @@ out_fp_active:
 out_fp_endif:
     str r0, [r2, #_thread_offset_to_mode]
 #endif /* CONFIG_FP_SHARING */
+#elif defined(CONFIG_ARMV7_A)
+    /* TODO */
 #elif defined(CONFIG_ARMV7_R)
     /* Store rest of process context */
     mrs r12, SPSR
@@ -123,6 +125,8 @@ out_fp_endif:
     movs.n r0, #_EXC_IRQ_DEFAULT_PRIO
     msr BASEPRI, r0
     isb /* Make the effect of disabling interrupts be realized immediately */
+#elif defined(CONFIG_ARMV7_A)
+    /* TODO */
 #elif defined(CONFIG_ARMV7_R)
     /*
      * Interrupts are still disabled from arch_swap so empty clause
@@ -305,6 +309,9 @@ in_fp_endif:
     /* load callee-saved + psp from thread */
     add r0, r2, #_thread_offset_to_callee_saved
     ldmia r0, {v1-v8, ip}
+#elif defined(CONFIG_ARMV7_A)
+_thread_irq_disabled:
+    /* TODO */
 #elif defined(CONFIG_ARMV7_R)
 _thread_irq_disabled:
     /* load _kernel into r1 and current k_thread into r2 */
@@ -559,6 +566,8 @@ valid_syscall_id:
     bx lr
 #endif /* CONFIG_USERSPACE */
 
+#elif defined(CONFIG_ARMV7_A)
+    /* TODO */
 #elif defined(CONFIG_ARMV7_R)
 
 /**

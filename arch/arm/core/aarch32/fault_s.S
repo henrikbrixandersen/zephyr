@@ -34,6 +34,8 @@ GTEXT(z_arm_debug_monitor)
 GTEXT(z_arm_undef_instruction)
 GTEXT(z_arm_prefetch_abort)
 GTEXT(z_arm_data_abort)
+#elif defined(CONFIG_ARMV7_A)
+/* TODO */
 #else
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
@@ -82,6 +84,8 @@ SECTION_SUBSEC_FUNC(TEXT,__fault,z_arm_debug_monitor)
 SECTION_SUBSEC_FUNC(TEXT,__fault,z_arm_undef_instruction)
 SECTION_SUBSEC_FUNC(TEXT,__fault,z_arm_prefetch_abort)
 SECTION_SUBSEC_FUNC(TEXT,__fault,z_arm_data_abort)
+#elif defined(CONFIG_ARMV7_A)
+/* TODO */
 #else
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
@@ -101,6 +105,8 @@ SECTION_SUBSEC_FUNC(TEXT,__fault,z_arm_reserved)
 	 * provides.
 	 */
 	mov r0, #0
+#elif defined(CONFIG_ARMV7_A)
+	/* TODO */
 #else
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE || CONFIG_ARMv7_M_ARMV8_M_MAINLINE */

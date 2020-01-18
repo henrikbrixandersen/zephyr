@@ -63,6 +63,8 @@ static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 		: "=r" (key)
 		:
 		: "memory", "cc");
+#elif defined(CONFIG_ARMV7_A)
+/* TODO */
 #else
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
@@ -90,6 +92,8 @@ static ALWAYS_INLINE void arch_irq_unlock(unsigned int key)
 		"msr BASEPRI, %0;"
 		"isb;"
 		:  : "r"(key) : "memory");
+#elif defined(CONFIG_ARMV7_A)
+	/* TODO */
 #elif defined(CONFIG_ARMV7_R)
 	__asm__ volatile("msr cpsr_c, %0"
 			:

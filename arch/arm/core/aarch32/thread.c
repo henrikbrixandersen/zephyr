@@ -438,6 +438,8 @@ void arch_switch_to_main_thread(struct k_thread *main_thread,
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 	"cpsie if\n\t"		/* __enable_irq(); __enable_fault_irq() */
 	"msr   BASEPRI, r1\n\t"	/* __set_BASEPRI(0) */
+#elif defined(CONFIG_ARMV7_A)
+	/* TODO */
 #else
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
