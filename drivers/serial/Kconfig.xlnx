@@ -5,7 +5,8 @@
 
 config UART_XLNX_PS
 	bool "Xilinx serial driver for MPSoC"
-	depends on SOC_XILINX_ZYNQMP
+	depends on (SOC_XILINX_ZYNQ_7000 || SOC_XILINX_ZYNQMP)
 	select SERIAL_HAS_DRIVER
 	help
-	  This option enables the UART driver for Xilinx MPSoC platforms.
+	  This option enables the UART driver for Xilinx Zynq 7000 and
+	  MPSoC platforms.
