@@ -37,7 +37,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         self.device = device
         self.commander = commander
         self.flash_addr = flash_addr
-        self.erase = erase
+        self.flash_erase = erase
         self.reset_after_load = reset_after_load
         self.gdbserver = gdbserver
         self.iface = iface
@@ -55,7 +55,8 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
 
     @classmethod
     def capabilities(cls):
-        return RunnerCaps(commands={'flash', 'debug', 'debugserver', 'attach'},
+        return RunnerCaps(commands={'flash', 'debug', 'debugserver', 'attach',
+                                    'erase'},
                           flash_addr=True)
 
     @classmethod
@@ -119,6 +120,8 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
 
         if command == 'flash':
             self.flash(**kwargs)
+        elif command == 'erase':
+            self.erase(**kwargs)
         elif command == 'debugserver':
             self.require(self.gdbserver)
             self.print_gdbserver_message()
@@ -143,24 +146,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
             self.print_gdbserver_message()
             self.run_server_and_client(server_cmd, client_cmd)
 
-    def flash(self, **kwargs):
-        self.require(self.commander)
-        if self.bin_name is None:
-            raise ValueError('Cannot flash; bin_name is missing')
-
-        lines = ['r'] # Reset and halt the target
-
-        if self.erase:
-            lines.append('erase') # Erase all flash sectors
-
-        lines.append('loadfile {} 0x{:x}'.format(self.bin_name,
-                                                 self.flash_addr))
-        if self.reset_after_load:
-            lines.append('r') # Reset and halt the target
-
-        lines.append('g') # Start the CPU
-        lines.append('q') # Close the connection and quit
-
+    def run_commands(self, lines):
         self.logger.debug('JLink commander script:')
         self.logger.debug('\n'.join(lines))
 
@@ -180,3 +166,33 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
 
             self.logger.info('Flashing file: {}'.format(self.bin_name))
             self.check_call(cmd)
+
+    def flash(self, **kwargs):
+        self.require(self.commander)
+        if self.bin_name is None:
+            raise ValueError('Cannot flash; bin_name is missing')
+
+        lines = ['r'] # Reset and halt the target
+
+        if self.flash_erase:
+            lines.append('erase') # Erase all flash sectors
+
+        lines.append('loadfile {} 0x{:x}'.format(self.bin_name,
+                                                 self.flash_addr))
+        if self.reset_after_load:
+            lines.append('r') # Reset and halt the target
+
+        lines.append('g') # Start the CPU
+        lines.append('q') # Close the connection and quit
+
+        self.run_commands(lines)
+
+    def erase(self, **kwargs):
+        self.require(self.commander)
+
+        lines = ['r'] # Reset and halt the target
+
+        lines.append('erase') # Erase all flash sectors
+        lines.append('q') # Close the connection and quit
+
+        self.run_commands(lines)
