@@ -58,7 +58,8 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
 
     @classmethod
     def capabilities(cls):
-        return RunnerCaps(commands={'flash', 'debug', 'debugserver', 'attach'},
+        return RunnerCaps(commands={'flash', 'debug', 'debugserver', 'attach',
+                                    'erase'},
                           flash_addr=True)
 
     @classmethod
@@ -114,6 +115,8 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
         self.require(self.pyocd)
         if command == 'flash':
             self.flash(**kwargs)
+        elif command == 'erase':
+            self.erase(**kwargs)
         else:
             self.debug_debugserver(command, **kwargs)
 
@@ -143,6 +146,18 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
                [fname])
 
         self.logger.info('Flashing file: {}'.format(fname))
+        self.check_call(cmd)
+
+    def erase(self, **kwargs):
+        cmd = ([self.pyocd] +
+               ['erase'] +
+               ['--mass-erase'] +
+               self.daparg_args +
+               self.target_args +
+               self.board_args +
+               self.frequency_args)
+
+        self.logger.info('Erasing')
         self.check_call(cmd)
 
     def log_gdbserver_message(self):
