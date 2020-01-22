@@ -289,6 +289,9 @@ class ZephyrBinaryRunner(abc.ABC):
       the current binary, and block until it exits. Unlike 'debug', this
       command does not program the flash.
 
+    - 'erase': perform a full chip erase of the onboard flash, then
+      return.
+
     This class provides an API for these commands. Every subclass is
     called a 'runner' for short. Each runner has a name (like
     'pyocd'), and declares commands it can handle (like
@@ -431,7 +434,7 @@ class ZephyrBinaryRunner(abc.ABC):
             return default
 
     def run(self, command, **kwargs):
-        '''Runs command ('flash', 'debug', 'debugserver', 'attach').
+        '''Runs command ('flash', 'debug', 'debugserver', 'attach', 'erase').
 
         This is the main entry point to this runner.'''
         caps = self.capabilities()

@@ -742,6 +742,11 @@ __comp_west_attach()
 	__comp_west_runner_cmd
 }
 
+__comp_west_erase()
+{
+	__comp_west_runner_cmd
+}
+
 __comp_west()
 {
 	local previous_extglob_setting=$(shopt -p extglob)
@@ -770,6 +775,7 @@ __comp_west()
 		debug
 		debugserver
 		attach
+		erase
 	)
 
 	local cmds=(${builtin_cmds[*]} ${zephyr_ext_cmds[*]})

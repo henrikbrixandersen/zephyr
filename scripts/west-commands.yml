@@ -36,3 +36,8 @@ west-commands:
       - name: attach
         class: Attach
         help: interactively debug a board
+  - file: scripts/west_commands/erase.py
+    commands:
+      - name: erase
+        class: Erase
+        help: mass-erase the onboard flash
