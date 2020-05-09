@@ -55,12 +55,29 @@
 			gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
 		};
 	};
+
+	i2s0: i2s0 {
+		compatible = "nxp,lpc-i2s";
+		nxp,flexcomm-tx = <&flexcomm7>;
+		nxp,flexcomm-rx = <&flexcomm6>;
+		label = "I2S_0";
+		#address-cells = <1>;
+		#size-cells = <0>;
+	};
 };
 
 &flexcomm0 {
 	status = "okay";
 	compatible = "nxp,lpc-usart";
 	current-speed = <115200>;
+};
+
+&flexcomm6 {
+	status = "okay";
+};
+
+&flexcomm7 {
+	status = "okay";
 };
 
 arduino_i2c: &flexcomm4 {
