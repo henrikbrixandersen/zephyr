@@ -1,0 +1,19 @@
+# Copyright (c) 2020 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+description: LPC I2S node
+
+compatible: "nxp,lpc-i2s"
+
+include: i2s-controller.yaml
+
+properties:
+    nxp,flexcomm-tx:
+      type: phandle
+      required: true
+      description: Flexcomm node used for I2S transmit function
+
+    nxp,flexcomm-rx:
+      type: phandle
+      required: true
+      description: Flexcomm node used for I2S receive function
