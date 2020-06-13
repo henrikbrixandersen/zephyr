@@ -1,0 +1,17 @@
+# Copyright (c) 2020 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+config I2S_MCUX_FLEXCOMM
+	bool "MCUX FLEXCOMM I2S driver"
+	depends on HAS_MCUX_FLEXCOMM
+	help
+	  Enable the MCUX Flexcomm I2S driver.
+
+config I2S_MCUX_FLEXCOMM_NUM_BUFFERS
+	int "Number of I2S buffers"
+	depends on I2S_MCUX_FLEXCOMM
+	default 4
+	help
+	  Number of I2S queue buffers to use in the MCUX Flexcomm I2S
+	  driver. The same amount of buffers will be allocated for
+	  both I2S transmit and recieve queues.
