@@ -24,4 +24,8 @@ config SOC_FLASH_MCUX
 	default y
 	depends on FLASH
 
+config I2S_MCUX_FLEXCOMM
+	default y
+	depends on I2S
+
 endif # SOC_LPC55S16
