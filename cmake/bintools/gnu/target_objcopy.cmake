@@ -16,6 +16,7 @@
 #
 #      GAP_FILL           <Value used for gap fill, empty or not set, no gap fill>
 #      SREC_LEN           <For srec format only, max length of the records>
+#      VERILOG_DATA_WIDTH <For verilog format only, element data width>
 #
 #      SECTION_ONLY       <One or more section names to be included>
 #      SECTION_REMOVE     <One or more section names to be excluded>
@@ -31,7 +32,7 @@ function(bintools_objcopy)
     # List of argument names without values, hence boolean
     "STRIP_ALL;STRIP_DEBUG"
     # List of argument names with one value
-    "RESULT_CMD_LIST;RESULT_BYPROD_LIST;TARGET_INPUT;TARGET_OUTPUT;GAP_FILL;SREC_LEN;FILE_INPUT;FILE_OUTPUT"
+    "RESULT_CMD_LIST;RESULT_BYPROD_LIST;TARGET_INPUT;TARGET_OUTPUT;GAP_FILL;SREC_LEN;VERILOG_DATA_WIDTH;FILE_INPUT;FILE_OUTPUT"
     # List of argument names with multible values
     "SECTION_ONLY;SECTION_RENAME;SECTION_REMOVE"
     # Parser input
@@ -66,6 +67,16 @@ function(bintools_objcopy)
       message(WARNING "Ignoring srec len, for non srec target: ${BINTOOLS_OBJCOPY_TARGET_OUTPUT}")
     else()
       set(obj_copy_srec_len "--srec-len;${BINTOOLS_OBJCOPY_SREC_LEN}")
+    endif()
+  endif()
+
+  # Handle verilog data width, but only if target output is verilog
+  set(obj_copy_verilog_data_width "")
+  if(DEFINED BINTOOLS_OBJCOPY_VERILOG_DATA_WIDTH)
+    if(NOT ${BINTOOLS_OBJCOPY_TARGET_OUTPUT} STREQUAL "verilog")
+      message(WARNING "Ignoring verilog data width, for non verilog target: ${BINTOOLS_OBJCOPY_TARGET_OUTPUT}")
+    else()
+      set(obj_copy_verilog_data_width "--verilog-data-width;${BINTOOLS_OBJCOPY_VERILOG_DATA_WIDTH}")
     endif()
   endif()
 
@@ -111,7 +122,7 @@ function(bintools_objcopy)
   # Construct the command
   set(obj_copy_cmd
     # Base command
-    COMMAND ${CMAKE_OBJCOPY} ${obj_copy_strip} ${obj_copy_gap_fill} ${obj_copy_srec_len}
+    COMMAND ${CMAKE_OBJCOPY} ${obj_copy_strip} ${obj_copy_gap_fill} ${obj_copy_srec_len} ${obj_copy_verilog_data_width}
     # Input and Output target types
     ${obj_copy_target_input} ${obj_copy_target_output}
     # Sections

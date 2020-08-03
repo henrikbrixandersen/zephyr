@@ -1212,6 +1212,37 @@ if(CONFIG_BUILD_OUTPUT_S19)
     )
 endif()
 
+if(CONFIG_BUILD_OUTPUT_VERILOG)
+  set(out_verilog_cmd    "")
+  set(out_verilog_byprod "")
+  set(out_verilog_data_width ${CONFIG_BUILD_OUTPUT_VERILOG_DATA_WIDTH})
+  set(out_verilog_sections_remove
+    .comment
+    COMMON
+    .eh_frame
+    )
+  bintools_objcopy(
+    RESULT_CMD_LIST    out_verilog_cmd
+    RESULT_BYPROD_LIST out_verilog_byprod
+    STRIP_ALL
+    GAP_FILL           ${GAP_FILL}
+    TARGET_OUTPUT      "verilog"
+    VERILOG_DATA_WIDTH ${out_verilog_data_width}
+    SECTION_REMOVE     ${out_verilog_sections_remove}
+    FILE_INPUT         ${KERNEL_ELF_NAME}
+    FILE_OUTPUT        ${KERNEL_VERILOG_NAME}
+    )
+  list(APPEND
+    post_build_commands
+    ${out_verilog_cmd}
+    )
+  list(APPEND
+    post_build_byproducts
+    ${KERNEL_VERILOG_NAME}
+    ${out_verilog_byprod}
+    )
+endif()
+
 if(CONFIG_OUTPUT_DISASSEMBLY)
   set(out_disassembly_cmd    "")
   set(out_disassembly_byprod "")

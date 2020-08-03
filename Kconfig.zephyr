@@ -292,15 +292,15 @@ config OUTPUT_PRINT_MEMORY_USAGE
 config BUILD_OUTPUT_HEX
 	bool "Build a binary in HEX format"
 	help
-	  Build a binary in HEX format. This will build a zephyr.hex file need
-	  by some platforms.
+	  Build a binary in HEX format. This will build a zephyr.hex file
+	  needed by some platforms.
 
 config BUILD_OUTPUT_BIN
 	bool "Build a binary in BIN format"
 	default y
 	help
-	  Build a binary in BIN format. This will build a zephyr.bin file need
-	  by some platforms.
+	  Build a binary in BIN format. This will build a zephyr.bin file
+	  needed by some platforms.
 
 config BUILD_OUTPUT_EXE
 	bool "Build a binary in ELF format with .exe extension"
@@ -311,8 +311,22 @@ config BUILD_OUTPUT_EXE
 config BUILD_OUTPUT_S19
 	bool "Build a binary in S19 format"
 	help
-	  Build a binary in S19 format. This will build a zephyr.s19 file need
-	  by some platforms.
+	  Build a binary in S19 format. This will build a zephyr.s19 file
+	  needed by some platforms.
+
+config BUILD_OUTPUT_VERILOG
+	bool "Build a binary in Verilog memory hex dump format"
+	help
+	  Build a binary in Verilog memory hex dump format. This will build a
+	  zephyr.mem file needed by some platforms.
+
+config BUILD_OUTPUT_VERILOG_DATA_WIDTH
+	int "Verilog output format data width"
+	depends on BUILD_OUTPUT_VERILOG
+	default 4
+	default 8 if 64BIT
+	help
+	  Verilog memory hex dump output format data element width in bytes.
 
 config BUILD_NO_GAP_FILL
 	bool "Don't fill gaps in generated hex/bin/s19 files."
