@@ -146,4 +146,9 @@ config I2C_RV32M1_LPI2C
 	help
 	  Enable the RV32M1 LPI2C driver.
 
+config I2C_XLNX_AXI_IIC
+	bool "Xilinx AXI IIC driver"
+	help
+	  Enable the Xilinx AXI IIC v2.0 driver.
+
 endif # I2C
