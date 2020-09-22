@@ -1,0 +1,25 @@
+description: Xilinx AXI IIC IP General Purpose Output
+
+compatible: "xlnx,xps-iic-2.00.a-gpo"
+
+include: [base.yaml, gpio-controller.yaml]
+
+properties:
+    ngpios:
+      required: true
+
+    label:
+      required: true
+
+    "#gpio-cells":
+      const: 2
+
+    xlnx,axi-iic:
+      type: phandle
+      required: true
+      description: |
+        Parent Xilinx AXI IIC controller
+
+gpio-cells:
+  - pin
+  - flags
