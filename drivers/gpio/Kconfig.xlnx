@@ -7,3 +7,9 @@ config GPIO_XLNX_AXI
 	bool "Xilinx AXI GPIO driver"
 	help
 	  Enable Xilinx AXI GPIO v2 driver.
+
+config GPIO_XLNX_AXI_IIC_GPO
+	bool "Xilinx AXI IIC GPO driver"
+	depends on I2C_XLNX_AXI_IIC
+	help
+	  Enable Xilinx AXI IIC GPO driver.
