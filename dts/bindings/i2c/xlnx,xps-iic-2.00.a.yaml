@@ -1,0 +1,64 @@
+description: Xilinx AXI IIC IP
+
+compatible: "xlnx,xps-iic-2.00.a"
+
+include: i2c-controller.yaml
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true
+
+    xlnx,tsusta:
+      type: int
+      required: false
+      description: |
+        Setup time (in terms  of number  of core clock cycles) for a repeated
+        START condition.
+
+    xlnx,tsusto:
+      type: int
+      required: false
+      description: |
+        Setup time (in terms  of number  of core clock cycles) for a repeated
+        STOP condition.
+
+    xlnx,thdsta:
+      type: int
+      required: false
+      description: |
+        Hold time (in terms of number of core clock cycles) for a repeated START
+        condition.
+
+    xlnx,tsudat:
+      type: int
+      required: false
+      description: |
+        Data setup time (in terms  of number  of core clock cycles).
+
+    xlnx,tbuf:
+      type: int
+      required: false
+      description: |
+        Bus free time between a START and STOP conditition (in terms of number
+        of core clock cycles).
+
+    xlnx,thigh:
+      type: int
+      required: false
+      description: |
+        High period (in terms of number of core clock cycles) for the SCL clock.
+
+    xlnx,tlow:
+      type: int
+      required: false
+      description: |
+        Low period (in terms of number of core clock cycles) for the SCL clock.
+
+    xlnx,thddat:
+      type: int
+      required: false
+      description: |
+        Data hold time (in terms  of number  of core clock cycles).
