@@ -57,6 +57,6 @@ properties:
       required: false
       description: RESET pin.
 
-        The RESET pin of SSD1306 is active low.
+        The RESET pin of SSD13xx is active low.
         If connected directly the MCU pin should be configured
         as active low.
