@@ -1,0 +1,10 @@
+# Copyright (c) 2020, Marco Peter
+# SPDX-License-Identifier: Apache-2.0
+
+include: ["solomon,ssd13xxfb-common.yaml", "spi-device.yaml"]
+
+properties:
+    data_cmd-gpios:
+      type: phandle-array
+      required: true
+      description: D/C# pin.

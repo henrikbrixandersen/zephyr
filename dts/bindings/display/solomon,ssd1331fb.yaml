@@ -1,0 +1,8 @@
+# Copyright (c) 2020 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+description: SSD1331 96RGBx64 dot-matrix display controller on SPI bus
+
+compatible: "solomon,ssd1331fb"
+
+include: ["solomon,ssd13xxfb-spi.yaml", "spi-device.yaml"]

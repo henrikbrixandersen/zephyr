@@ -5,10 +5,4 @@ description: SSD1306 128x64 dot-matrix display controller on SPI bus
 
 compatible: "solomon,ssd1306fb"
 
-include: ["solomon,ssd13xxfb-common.yaml", "spi-device.yaml"]
-
-properties:
-    data_cmd-gpios:
-      type: phandle-array
-      required: true
-      description: D/C# pin.
+include: ["solomon,ssd13xxfb-spi.yaml", "spi-device.yaml"]
