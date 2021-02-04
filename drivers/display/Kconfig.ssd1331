@@ -1,0 +1,10 @@
+# SSD1331 display controller configuration options
+
+# Copyright (c) 2020 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+config SSD1331
+	bool "SSD1331 display driver"
+	depends on SPI
+	help
+	  Enable driver for SSD1331 display controller.
