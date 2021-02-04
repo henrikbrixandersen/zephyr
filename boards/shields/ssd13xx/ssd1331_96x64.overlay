@@ -1,0 +1,29 @@
+/*
+ * Copyright (c) 2020 Henrik Brix Andersen <henrik@brixandersen.dk>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&arduino_spi {
+	status = "okay";
+
+	ssd1331@0 {
+		compatible = "solomon,ssd1331fb";
+		reg = <0x0>;
+		label = "SSD1331";
+		spi-max-frequency = <10000000>;
+		width = <96>;
+		height = <64>;
+		segment-offset = <0>;
+		page-offset = <0>;
+		display-offset = <0>;
+		multiplex-ratio = <63>;
+		segment-remap;
+		com-invdir;
+		prechargep = <0x22>;
+		data_cmd-gpios = <&arduino_header 15 0>;
+		/* TODO: comment this */
+		reset-gpios = <&arduino_header 14 GPIO_ACTIVE_LOW>;
+		enable-gpios = <&arduino_header 13 GPIO_ACTIVE_HIGH>;
+	};
+};
