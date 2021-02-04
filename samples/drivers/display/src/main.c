@@ -22,6 +22,10 @@ LOG_MODULE_REGISTER(sample, LOG_LEVEL_INF);
 #define DISPLAY_DEV_NAME DT_LABEL(DT_INST(0, solomon_ssd1306fb))
 #endif
 
+#if DT_NODE_HAS_STATUS(DT_INST(0, solomon_ssd1331fb), okay)
+#define DISPLAY_DEV_NAME DT_LABEL(DT_INST(0, solomon_ssd1331fb))
+#endif
+
 #if DT_NODE_HAS_STATUS(DT_INST(0, gooddisplay_gdeh0213b1), okay)
 #define DISPLAY_DEV_NAME DT_LABEL(DT_INST(0, gooddisplay_gdeh0213b1))
 #endif
@@ -318,6 +322,7 @@ void main(void)
 	while (1) {
 		fill_buffer_fnc(BOTTOM_LEFT, grey_count, buf, buf_size);
 		display_write(display_dev, x, y, &buf_desc, buf);
+		//return;
 		++grey_count;
 		k_msleep(grey_scale_sleep);
 #if CONFIG_TEST

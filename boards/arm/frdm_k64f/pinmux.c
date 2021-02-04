@@ -87,6 +87,10 @@ static int frdm_k64f_pinmux_init(const struct device *dev)
 	pinmux_pin_set(portc, 17, PORT_PCR_MUX(kPORT_MuxAsGpio));
 #endif
 
+	pinmux_pin_set(portc,  3, PORT_PCR_MUX(kPORT_MuxAsGpio));
+	pinmux_pin_set(portc,  4, PORT_PCR_MUX(kPORT_MuxAsGpio));
+	pinmux_pin_set(portc, 12, PORT_PCR_MUX(kPORT_MuxAsGpio));
+
 #ifdef CONFIG_MODEM_UBLOX_SARA_R4
 	/* Modem RESET */
 	pinmux_pin_set(portc,  2, PORT_PCR_MUX(kPORT_MuxAsGpio));

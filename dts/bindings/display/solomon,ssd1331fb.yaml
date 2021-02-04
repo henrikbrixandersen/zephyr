@@ -6,3 +6,9 @@ description: SSD1331 96RGBx64 dot-matrix display controller on SPI bus
 compatible: "solomon,ssd1331fb"
 
 include: ["solomon,ssd13xxfb-spi.yaml", "spi-device.yaml"]
+
+properties:
+    enable-gpios:
+      type: phandle-array
+      required: false
+      description: Optional VCC enable pin.
