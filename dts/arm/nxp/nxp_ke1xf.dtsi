@@ -317,6 +317,15 @@
 			#pwm-cells = <3>;
 		};
 
+		flexio: flexio@4005a000 {
+			compatible = "nxp,kinetis-flexio";
+			reg = <0x4005a000 0x1000>;
+			interrupts = <69 0>;
+			clocks = <&pcc 0x168 KINETIS_PCC_SRC_FIRC_ASYNC>;
+			label = "FLEXIO";
+			status = "disabled";
+		};
+
 		ftfe: flash-controller@40020000 {
 			compatible = "nxp,kinetis-ftfe";
 			label = "FLASH_CTRL";
