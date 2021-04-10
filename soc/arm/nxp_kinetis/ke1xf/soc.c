@@ -235,6 +235,10 @@ static ALWAYS_INLINE void clk_init(void)
 	CLOCK_SetIpSrc(kCLOCK_Ftm3,
 		       DT_CLOCKS_CELL(DT_NODELABEL(ftm3), ip_source));
 #endif
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexio), okay)
+	CLOCK_SetIpSrc(kCLOCK_Flexio0,
+		       DT_CLOCKS_CELL(DT_NODELABEL(flexio), ip_source));
+#endif
 }
 
 static int ke1xf_init(const struct device *arg)
