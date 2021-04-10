@@ -1,0 +1,33 @@
+# Copyright (c) 2021 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP Kinetis FlexIO device
+
+include: base.yaml
+
+on-bus: flexio
+
+properties:
+    timers:
+      type: array
+      required: false
+      description: |
+        Array of the FlexIO timer indexes assigned to the device.
+
+    timer-names:
+      type: string-array
+      required: false
+      description: |
+        Name of each FlexIO timer.
+
+    shifters:
+      type: array
+      required: false
+      description: |
+        Array of the FlexIO shifter indexes assigned to the device.
+
+    shifter-names:
+      type: string-array
+      required: false
+      description: |
+        Name of each FlexIO shifter.
