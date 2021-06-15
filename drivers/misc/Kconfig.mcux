@@ -1,0 +1,17 @@
+# NXP MCUX FlexIO configuration options
+
+# Copyright (c) 2021 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+config MCUX_FLEXIO
+	bool "NXP MCUX FlexIO driver"
+	depends on HAS_MCUX_FLEXIO
+	help
+	  Enable NXP MCUX FlexIO driver.
+
+config MCUX_FLEXIO_INIT_PRIORITY
+	int "Init priority"
+	depends on MCUX_FLEXIO
+	default 50
+	help
+	  MCUX FlexIO device driver initialization priority.
