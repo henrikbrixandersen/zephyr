@@ -1,0 +1,36 @@
+# Copyright (c) 2019 - 2021 Vestas Wind Systems A/S
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig CANOPEN
+	bool "CANopen protocol support"
+	depends on CAN
+	help
+	  Enable CANopen (EN 50325-4) (CiA301) protocol
+	  support.
+
+if CANOPEN
+
+module = CANOPEN
+module-str = CANopen
+source "subsys/logging/Kconfig.template.log_config"
+
+choice CANOPEN_STACK
+	prompt "CANopen Stack"
+
+config CANOPEN_STACK_CANOPENNODE
+	bool "CANopenNode"
+	select CANOPENNODE
+	help
+	  CANopenNode stack.
+
+config CANOPEN_STACK_NATIVE
+	bool "Native [EXPERIMENTAL]"
+	select SMF
+	select SMF_ANCESTOR_SUPPORT
+	select EXPERIMENTAL
+	help
+	  Zephyr native CANopen stack.
+
+endchoice # CANOPEN_STACK
+
+endif # CANOPEN
