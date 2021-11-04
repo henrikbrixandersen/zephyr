@@ -1,0 +1,22 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Henrik Brix Andersen <henrik@brixandersen.dk>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/led/led.h>
+
+/ {
+	aliases {
+		canopen-status-led = &canopen_status_led;
+	};
+
+	bicolor_led: bicolor-led {
+		compatible = "leds-group-multicolor";
+
+		leds = <&red_led>, <&green_led>;
+		color-mapping = <LED_COLOR_ID_RED>, <LED_COLOR_ID_GREEN>;
+
+		canopen_status_led: canopen-status-led {};
+	};
+};
