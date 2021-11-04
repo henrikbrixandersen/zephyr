@@ -1,0 +1,14 @@
+sample:
+  name: CANopen sample
+common:
+  tags: can canopen
+  depends_on: can
+  platform_allow: twr_ke18f
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "(.*)CANopen stack initialized"
+tests:
+  sample.modules.canopennode:
+    tags: introduction
