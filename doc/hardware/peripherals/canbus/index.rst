@@ -8,3 +8,4 @@ Controller Area Network (CAN)
 
    controller.rst
    isotp.rst
+   canopen.rst
