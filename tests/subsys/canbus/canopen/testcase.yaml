@@ -1,0 +1,3 @@
+tests:
+  can.canopen:
+    tags: net can
