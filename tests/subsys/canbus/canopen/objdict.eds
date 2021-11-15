@@ -1,0 +1,130 @@
+[FileInfo]
+FileName=objdict.eds
+FileVersion=0
+FileRevision=0
+EDSVersion=4.0
+Description=EDS for the Zephyr CANopen unit tests
+CreationTime=9:39PM
+CreationDate=11-15-2021
+CreatedBy=Henrik Brix Andersen <henrik@brixandersen.dk>
+ModificationTime=9:50PM
+ModificationDate=11-15-2021
+ModifiedBy=Henrik Brix Andersen <henrik@brixandersen.dk>
+
+[DeviceInfo]
+VendorName=Zephyr Project
+VendorNumber=0
+ProductName=Zephyr CANopen test
+ProductNumber=0xdeadbeef
+RevisionNumber=42
+BaudRate_10=0
+BaudRate_20=0
+BaudRate_50=0
+BaudRate_125=0
+BaudRate_250=0
+BaudRate_500=0
+BaudRate_800=0
+BaudRate_1000=0
+SimpleBootUpMaster=0
+SimpleBootUpSlave=0
+Granularity=8
+DynamicChannelsSupported=0
+CompactPDO=0
+GroupMessaging=0
+NrOfRXPDO=0
+NrOfTXPDO=0
+LSS_Supported=0
+;LSS_Type=Server
+
+[DummyUsage]
+Dummy0001=0
+Dummy0002=1
+Dummy0003=1
+Dummy0004=1
+Dummy0005=1
+Dummy0006=1
+Dummy0007=1
+
+[Comments]
+Lines=0
+
+[MandatoryObjects]
+SupportedObjects=3
+1=0x1000
+2=0x1001
+3=0x1018
+
+[1000]
+ParameterName=Device type
+ObjectType=0x7
+;StorageLocation=RAM
+DataType=0x0007
+AccessType=ro
+DefaultValue=
+PDOMapping=0
+
+[1001]
+ParameterName=Error register
+ObjectType=0x7
+;StorageLocation=RAM
+DataType=0x0005
+AccessType=ro
+DefaultValue=
+PDOMapping=0
+
+[1018]
+ParameterName=Identity object
+ObjectType=0x9
+;StorageLocation=RAM
+SubNumber=0x5
+
+[1018sub0]
+ParameterName=max sub-index
+ObjectType=0x7
+;StorageLocation=RAM
+DataType=0x0005
+AccessType=const
+DefaultValue=4
+PDOMapping=0
+
+[1018sub1]
+ParameterName=Vendor-ID
+ObjectType=0x7
+;StorageLocation=RAM
+DataType=0x0007
+AccessType=ro
+DefaultValue=0
+PDOMapping=0
+
+[1018sub2]
+ParameterName=Product code
+ObjectType=0x7
+;StorageLocation=RAM
+DataType=0x0007
+AccessType=ro
+DefaultValue=0xdeadbeef
+PDOMapping=0
+
+[1018sub3]
+ParameterName=Revision number
+ObjectType=0x7
+;StorageLocation=RAM
+DataType=0x0007
+AccessType=ro
+DefaultValue=42
+PDOMapping=0
+
+[1018sub4]
+ParameterName=Serial number
+ObjectType=0x7
+;StorageLocation=RAM
+DataType=0x0007
+AccessType=ro
+DefaultValue=1331
+PDOMapping=0
+
+[OptionalObjects]
+SupportedObjects=0
+
+[ManufacturerObjects]
+SupportedObjects=0
