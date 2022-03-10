@@ -1036,9 +1036,11 @@ Release Notes:
     - samples/modules/canopennode/
     - samples/net/sockets/can/
     - samples/subsys/canbus/
+    - samples/subsys/usb/gs_usb/
     - scripts/west_commands/runners/canopen_program.py
     - subsys/canbus/
     - subsys/net/l2/canbus/
+    - subsys/usb/device/class/*gs_usb*
     - tests/drivers/build_all/can/
     - tests/drivers/can/
     - tests/net/socket/can/
