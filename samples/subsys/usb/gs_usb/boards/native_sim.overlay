@@ -1,0 +1,29 @@
+/*
+ * Copyright 2024 Henrik Brix Andersen <henrik@brixandersen.dk>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		/* TODO: remove this */
+		zephyr,canbus = &can0;
+	};
+};
+
+&can_loopback0 {
+	status = "disabled";
+};
+
+&can0 {
+	status = "okay";
+};
+
+&zephyr_udc0 {
+	maximum-speed = "high-speed";
+
+	gs_usb0: gs_usb0 {
+		compatible = "zephyr,gs_usb";
+		label = "GS_USB_0";
+	};
+};
