@@ -44,6 +44,20 @@ config GPIO_GET_CONFIG
 	  This option enables the support for getting the current configurations
 	  of GPIOs. The driver must implement it to work.
 
+config GPIO_HOG
+	bool "Support for GPIO hogs"
+	default y
+	help
+	  Enable support for GPIO hogs. GPIO hogging is a mechanism for providing automatic GPIO
+	  configuration via devicetree.
+
+config GPIO_HOG_INIT_PRIORITY
+	int "GPIO hogs init priority"
+	default KERNEL_INIT_PRIORITY_DEFAULT
+	help
+	  GPIO hogs initialization priority. GPIO hogs must be initialized after the GPIO controller
+	  drivers.
+
 source "drivers/gpio/Kconfig.b91"
 
 source "drivers/gpio/Kconfig.dw"
