@@ -916,6 +916,66 @@ static inline int canopen_od_read(struct canopen_od *od, uint16_t index, uint8_t
 	return canopen_od_read_by_handle(od, handle, value, len, abort_code);
 }
 
+static inline int canopen_od_read_u32_by_handle_unlocked(struct canopen_od *od, canopen_od_handle_t handle,
+							 uint32_t *value, enum canopen_sdo_abort_code *abort_code)
+{
+	/* TODO: check attr type and bits */
+
+	return canopen_od_read_by_handle_unlocked(od, handle, value, sizeof(*value), abort_code);
+}
+
+static inline int canopen_od_read_u32_by_handle(struct canopen_od *od, canopen_od_handle_t handle,
+						uint32_t *value, enum canopen_sdo_abort_code *abort_code)
+{
+	/* TODO: check attr type and bits */
+
+	return canopen_od_read_by_handle(od, handle, value, sizeof(*value), abort_code);
+}
+
+static inline int canopen_od_read_u32(struct canopen_od *od, uint16_t index, uint8_t subindex,
+				      uint32_t *value, enum canopen_sdo_abort_code *abort_code)
+{
+	/* TODO: check attr type and bits */
+
+	return canopen_od_read(od, index, subindex, value, sizeof(*value), abort_code);
+}
+
+static inline int canopen_od_get_attr(struct canopen_od *od, uint16_t index, uint8_t subindex,
+				      uint32_t *attr)
+{
+
+}
+
+static inline int canopen_od_set_attr(struct canopen_od *od, uint16_t index, uint8_t subindex,
+				      uint32_t attr)
+{
+
+}
+
+static inline int canopen_od_get_min(struct canopen_od *od, uint16_t index, uint8_t subindex,
+				     void *min, size_t len)
+{
+
+}
+
+static inline int canopen_od_set_min(struct canopen_od *od, uint16_t index, uint8_t subindex,
+				     void *min, size_t len)
+{
+
+}
+
+static inline int canopen_od_get_max(struct canopen_od *od, uint16_t index, uint8_t subindex,
+				     void *max, size_t len)
+{
+
+}
+
+static inline int canopen_od_set_max(struct canopen_od *od, uint16_t index, uint8_t subindex,
+				     void *max, size_t len)
+{
+
+}
+
 #ifdef __cplusplus
 }
 #endif
