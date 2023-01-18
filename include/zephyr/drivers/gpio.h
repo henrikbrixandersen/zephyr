@@ -418,6 +418,23 @@ struct gpio_dt_spec {
 	GPIO_DT_SPEC_INST_GET_BY_IDX_OR(inst, prop, 0, default_value)
 
 /**
+ * @brief Container for GPIO hog information specified in devicetree
+ *
+ * This type contains a pin number for a hogged pin and the subset of pin
+ * configuration flags which may be given in devicetree for GPIO hogs.
+ *
+ * TODO:
+ * @see GPIO_HOG_DT_SPEC_GET_BY_IDX
+ * @see GPIO_HOG_DT_SPEC_GET_BY_IDX_OR
+ * @see GPIO_HOG_DT_SPEC_GET
+ * @see GPIO_HOG_DT_SPEC_GET_OR
+ */
+struct gpio_hog_dt_spec {
+	gpio_pin_t pin;
+	gpio_flags_t flags;
+};
+
+/**
  * @brief Maximum number of pins that are supported by `gpio_port_pins_t`.
  */
 #define GPIO_MAX_PINS_PER_PORT (sizeof(gpio_port_pins_t) * __CHAR_BIT__)
@@ -434,6 +451,10 @@ struct gpio_driver_config {
 	 * instance generation in the driver.
 	 */
 	gpio_port_pins_t port_pin_mask;
+	/* TODO */
+	struct gpio_hog_dt_spec *hogs;
+	/* TODO */
+	size_t num_hogs;
 };
 
 /**
