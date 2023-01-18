@@ -24,6 +24,11 @@ struct gpio_mcux_config {
 	GPIO_Type *gpio_base;
 	PORT_Type *port_base;
 	unsigned int flags;
+	void (*irq_config_func)(void);
+#ifdef CONFIG_GPIO_HOGS
+	struct gpio_hog_dt_spec *hogs;
+	size_t num_hogs;
+#endif /* CONFIG_GPIO_HOGS */
 };
 
 struct gpio_mcux_data {
@@ -283,6 +288,19 @@ static int gpio_mcux_port_get_direction(const struct device *dev, gpio_port_pins
 }
 #endif /* CONFIG_GPIO_GET_DIRECTION */
 
+static int gpio_mcux_port_init(const struct device *dev)
+{
+	const struct gpio_mcux_config *config = dev->config;
+
+	config->irq_config_func();
+
+#ifdef CONFIG_GPIO_HOGS
+	return gpio_hogs_configure_dt(dev, config->hogs, config->num_hogs);
+#else /* CONFIG_GPIO_HOGS */
+	return 0;
+#endif /* !CONFIG_GPIO_HOGS */
+}
+
 static const struct gpio_driver_api gpio_mcux_driver_api = {
 	.pin_configure = gpio_mcux_configure,
 	.port_get_raw = gpio_mcux_port_get_raw,
@@ -309,8 +327,16 @@ static const struct gpio_driver_api gpio_mcux_driver_api = {
 
 #define GPIO_PORT_BASE_ADDR(n) DT_REG_ADDR(DT_INST_PHANDLE(n, nxp_kinetis_port))
 
+#ifdef CONFIG_GPIO_HOGS
+#define GPIO_MCUX_HOGS(n) .hogs = GPIO_HOG_DT_SPECS_INST_GET_BY_CTLR(n),
+#define GPIO_MCUX_NUM_HOGS(n) .num_hogs = GPIO_HOG_DT_SPECS_INST_NUM_BY_CTLR(n),
+#else /* CONFIG_GPIO_HOGS */
+#define GPIO_MCUX_HOGS(n)
+#define GPIO_MCUX_NUM_HOGS(n)
+#endif /* !CONFIG_GPIO_HOGS */
+
 #define GPIO_DEVICE_INIT_MCUX(n)					\
-	static int gpio_mcux_port## n ## _init(const struct device *dev); \
+	static void gpio_mcux_port## n ## _irq_config(void);		\
 									\
 	static const struct gpio_mcux_config gpio_mcux_port## n ## _config = {\
 		.common = {						\
@@ -319,12 +345,15 @@ static const struct gpio_driver_api gpio_mcux_driver_api = {
 		.gpio_base = (GPIO_Type *) DT_INST_REG_ADDR(n),		\
 		.port_base = (PORT_Type *) GPIO_PORT_BASE_ADDR(n),	\
 		.flags = UTIL_AND(DT_INST_IRQ_HAS_IDX(n, 0), GPIO_INT_ENABLE),\
+		.irq_config_func = gpio_mcux_port## n ## _irq_config,	\
+		GPIO_MCUX_HOGS(n)					\
+		GPIO_MCUX_NUM_HOGS(n)					\
 	};								\
 									\
 	static struct gpio_mcux_data gpio_mcux_port## n ##_data;	\
 									\
 	DEVICE_DT_INST_DEFINE(n,					\
-			    gpio_mcux_port## n ##_init,			\
+			    gpio_mcux_port_init,			\
 			    NULL,					\
 			    &gpio_mcux_port## n ##_data,		\
 			    &gpio_mcux_port## n##_config,		\
@@ -332,11 +361,10 @@ static const struct gpio_driver_api gpio_mcux_driver_api = {
 			    CONFIG_GPIO_INIT_PRIORITY,			\
 			    &gpio_mcux_driver_api);			\
 									\
-	static int gpio_mcux_port## n ##_init(const struct device *dev)	\
+	static void gpio_mcux_port## n ##_irq_config(void)		\
 	{								\
 		IF_ENABLED(DT_INST_IRQ_HAS_IDX(n, 0),			\
 			(GPIO_MCUX_IRQ_INIT(n);))			\
-		return 0;						\
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_DEVICE_INIT_MCUX)

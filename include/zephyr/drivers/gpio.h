@@ -418,6 +418,83 @@ struct gpio_dt_spec {
 	GPIO_DT_SPEC_INST_GET_BY_IDX_OR(inst, prop, 0, default_value)
 
 /**
+ * @brief Container for GPIO hog information specified in devicetree
+ *
+ * This type contains a pin number for a hogged pin and the subset of pin
+ * configuration flags which may be given in devicetree for GPIO hogs.
+ *
+ * @see GPIO_HOG_DT_SPEC_GET_BY_IDX
+ */
+struct gpio_hog_dt_spec {
+	gpio_pin_t pin;
+	gpio_flags_t flags;
+};
+
+/**
+ * @brief Static initializer for a @p gpio_hog_dt_spec
+ *
+ * This returns a static initializer for a @p gpio_hog_dt_spec structure given a
+ * devicetree node identifier and an index.
+ *
+ * Example devicetree fragment:
+ *
+ *     gpio1: gpio@... {
+ *       compatible = "vnd,gpio";
+ *       #gpio-cells = <2>;
+ *
+ *       n: node {
+ *               gpio-hog;
+ *               gpios = <0 GPIO_ACTIVE_HIGH>, <1 GPIO_ACTIVE_LOW>;
+ *               output-high;
+ *       };
+ *     };
+ *
+ * Bindings fragment for the vnd,gpio compatible:
+ *
+ *     gpio-cells:
+ *       - pin
+ *       - flags
+ *
+ * Example usage:
+ *
+ *	const struct gpio_hog_dt_spec hog = GPIO_HOG_DT_SPEC_GET_BY_IDX(DT_NODELABEL(n), 1);
+ *	// Initializes 'hog' to:
+ *	// {
+ *	//         .pin = 1,
+ *	//         .flags = GPIO_ACTIVE_LOW | GPIO_OUTPUT_ACTIVE,
+ *	// }
+ *
+ * It is an error to use this macro unless the node exists, the node is a GPIO hog,
+ * and that the idx corresponds to an existing, logical index into the nodes "gpios"
+ * property.
+ *
+ * @param node_id devicetree node identifier
+ * @param idx logical index into "gpios"
+ * @return static initializer for a struct gpio_hog_dt_spec for the index
+ */
+#define GPIO_HOG_DT_SPEC_GET_BY_IDX(node_id, idx)				  \
+	{									  \
+		.pin = DT_GPIO_HOG_PIN_BY_IDX(node_id, idx),			  \
+		.flags = DT_GPIO_HOG_FLAGS_BY_IDX(node_id, idx) |		  \
+		COND_CODE_1(DT_PROP(node_id, input), (GPIO_INPUT),		  \
+		COND_CODE_1(DT_PROP(node_id, output_low), (GPIO_OUTPUT_INACTIVE), \
+		COND_CODE_1(DT_PROP(node_id, output_high), (GPIO_OUTPUT_ACTIVE),  \
+		(0)))),								  \
+	}
+
+#define GPIO_HOG_DT_SPECS_NUM_BY_CTLR(node_id) \
+	0
+
+#define GPIO_HOG_DT_SPECS_GET_BY_CTLR(node_id) \
+	NULL
+
+#define GPIO_HOG_DT_SPECS_INST_NUM_BY_CTLR(inst) \
+	GPIO_HOG_DT_SPECS_NUM_BY_CTLR(DT_DRV_INST(inst))
+
+#define GPIO_HOG_DT_SPECS_INST_GET_BY_CTLR(inst) \
+	GPIO_HOG_DT_SPECS_GET_BY_CTLR(DT_DRV_INST(inst))
+
+/**
  * @brief Maximum number of pins that are supported by `gpio_port_pins_t`.
  */
 #define GPIO_MAX_PINS_PER_PORT (sizeof(gpio_port_pins_t) * __CHAR_BIT__)
@@ -1465,6 +1542,58 @@ static inline int z_impl_gpio_get_pending_int(const struct device *dev)
 	}
 
 	return api->get_pending_int(dev);
+}
+
+/**
+ * @brief Configure a GPIO hog from a @p gpio_hog_dt_spec.
+ *
+ * This is equivalent to:
+ *
+ *     gpio_pin_configure(port, hog->pin, hog->flags);
+ *
+ * @note This is supposed to be called by the GPIO controller driver
+ * initialization function.
+ *
+ * @param port Pointer to device structure for the driver instance.
+ * @param hog GPIO hog specification from devicetree
+ * @return a value from gpio_pin_configure()
+ *
+ * @see gpio_hogs_configure_dt()
+ */
+static inline int gpio_hog_configure_dt(const struct device *port,
+					const struct gpio_hog_dt_spec *hog)
+{
+	return gpio_pin_configure(port, hog->pin, hog->flags);
+}
+
+/**
+ * @brief Configure GPIO hogs from a an array of @p gpio_hog_dt_spec pointers.
+ *
+ * @note This is supposed to be called by the GPIO controller driver
+ * initialization function.
+ *
+ * @param port Pointer to device structure for the driver instance.
+ * @param hogs Pointer to array of GPIO hog specifications from devicetree
+ * @parm num_hogs Number of entries in the array
+ * @return a value from gpio_pin_configure()
+ *
+ * @see gpio_hog_configure_dt()
+ */
+static inline int gpio_hogs_configure_dt(const struct device *port,
+					 const struct gpio_hog_dt_spec *hogs,
+					 size_t num_hogs)
+{
+	int err;
+	int i;
+
+	for (i = 0; i < num_hogs; i++) {
+		err = gpio_hog_configure_dt(port, &hogs[i]);
+		if (err != 0) {
+			return err;
+		}
+	}
+
+	return 0;
 }
 
 /**
