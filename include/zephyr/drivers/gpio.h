@@ -483,7 +483,7 @@ struct gpio_hog_dt_spec {
 	}
 
 #define GPIO_HOG_DT_SPECS_NUM_BY_CTLR(node_id) \
-	0
+	LIST_DROP_EMPTY(0 + DT_FOREACH_CHILD_STATUS_OKAY_SEP(node_id, DT_NUM_GPIO_HOGS, (+)))
 
 #define GPIO_HOG_DT_SPECS_GET_BY_CTLR(node_id) \
 	NULL
