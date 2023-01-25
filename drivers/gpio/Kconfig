@@ -53,7 +53,7 @@ config GPIO_HOGS
 
 config GPIO_HOGS_INIT_PRIORITY
 	int "GPIO hogs init priority"
-	default KERNEL_INIT_PRIORITY_DEFAULT
+	default 41
 	help
 	  GPIO hogs initialization priority. GPIO hogs must be initialized after the
 	  GPIO controller drivers.

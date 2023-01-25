@@ -26,8 +26,8 @@ struct gpio_mcux_config {
 	unsigned int flags;
 	void (*irq_config_func)(void);
 #ifdef CONFIG_GPIO_HOGS
-	struct gpio_hog_dt_spec *hogs;
-	size_t num_hogs;
+//	struct gpio_hog_dt_spec *hogs;
+//	size_t num_hogs;
 #endif /* CONFIG_GPIO_HOGS */
 };
 
@@ -295,7 +295,8 @@ static int gpio_mcux_port_init(const struct device *dev)
 	config->irq_config_func();
 
 #ifdef CONFIG_GPIO_HOGS
-	return gpio_hogs_configure_dt(dev, config->hogs, config->num_hogs);
+//	return gpio_hogs_configure_dt(dev, config->hogs, config->num_hogs);
+	return 0;
 #else /* CONFIG_GPIO_HOGS */
 	return 0;
 #endif /* !CONFIG_GPIO_HOGS */
@@ -328,8 +329,8 @@ static const struct gpio_driver_api gpio_mcux_driver_api = {
 #define GPIO_PORT_BASE_ADDR(n) DT_REG_ADDR(DT_INST_PHANDLE(n, nxp_kinetis_port))
 
 #ifdef CONFIG_GPIO_HOGS
-#define GPIO_MCUX_HOGS(n) .hogs = GPIO_HOG_DT_SPECS_INST_GET_BY_CTLR(n),
-#define GPIO_MCUX_NUM_HOGS(n) .num_hogs = GPIO_HOG_DT_SPECS_INST_NUM_BY_CTLR(n),
+#define GPIO_MCUX_HOGS(n) //.hogs = GPIO_HOG_DT_SPECS_INST_GET_BY_CTLR(n),
+#define GPIO_MCUX_NUM_HOGS(n) //.num_hogs = GPIO_HOG_DT_SPECS_INST_NUM_BY_CTLR(n),
 #else /* CONFIG_GPIO_HOGS */
 #define GPIO_MCUX_HOGS(n)
 #define GPIO_MCUX_NUM_HOGS(n)
