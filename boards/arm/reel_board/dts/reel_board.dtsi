@@ -77,6 +77,14 @@
 			   <21 0 &gpio0 27 0>;	/* D15 */
 	};
 
+	en_v_periph: en-v-periph {
+		compatible = "regulator-fixed";
+		regulator-name = "en_v_periph";
+		enable-gpios = <&gpio1 0 GPIO_ACTIVE_HIGH>;
+		startup-delay-us = <1000>;
+		regulator-boot-on;
+	};
+
 	aliases {
 		led0 = &red_led;
 		led1 = &green_led;

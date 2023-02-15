@@ -41,4 +41,11 @@ config LV_Z_VDB_SIZE
 
 endif # LVGL
 
+if DISPLAY
+
+config REGULATOR
+	default y
+
+endif # DISPLAY
+
 endif # BOARD_REEL_BOARD || BOARD_REEL_BOARD_V2
