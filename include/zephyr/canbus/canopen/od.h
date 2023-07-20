@@ -31,6 +31,55 @@ struct canopen_od_object;
 struct canopen_od_entry;
 
 /**
+ * @name CANopen object dictionary entry type information
+ * @{
+ */
+/** Boolean type */
+#define CANOPEN_OD_TYPE_BOOLEAN    0x1U
+/** Void type */
+#define CANOPEN_OD_TYPE_VOID       0x2U
+/** Unsigned integer type */
+#define CANOPEN_OD_TYPE_UNSIGNED   0x3U
+/** Signed integer type */
+#define CANOPEN_OD_TYPE_INTEGER    0x4U
+/** 32 bit floating point type */
+#define CANOPEN_OD_TYPE_REAL32     0x5U
+/** 64 bit floating point type */
+#define CANOPEN_OD_TYPE_REAL64     0x6U
+/** NIL (empty) type */
+#define CANOPEN_OD_TYPE_NIL        0x7U
+/** @} */
+
+/**
+ * @name CANopen object dictionary object entry access attributes
+ * @{
+ */
+/** @cond INTERNAL_HIDDEN */
+#define CANOPEN_OD_ATTR_ACCESS_MASK       GENMASK(1, 0)
+/** @endcond */
+/** Read access */
+#define CANOPEN_OD_ATTR_ACCESS_READ       BIT(0)
+/** Write access */
+#define CANOPEN_OD_ATTR_ACCESS_WRITE      BIT(1)
+/** Read/write access */
+#define CANOPEN_OD_ATTR_ACCESS_READ_WRITE \
+	(CANOPEN_OD_ATTR_ACCESS_READ | CANOPEN_OD_ATTR_ACCESS_WRITE)
+/** @} */
+
+/**
+ * @name CANopen object dictionary object entry PDO mapping attributes
+ * @{
+ */
+/** @cond INTERNAL_HIDDEN */
+#define CANOPEN_OD_ATTR_PDO_MAPPABLE_MASK GENMASK(3, 2)
+/** @endcond */
+/** RPDO mappable */
+#define CANOPEN_OD_ATTR_PDO_MAPPABLE_RPDO BIT(2)
+/** TPDO mappable */
+#define CANOPEN_OD_ATTR_PDO_MAPPABLE_TPDO BIT(3)
+/** @} */
+
+/**
  * @typedef canopen_od_handle_t
  * @brief Opaque handle for accessing a CANopen object dictionary object entry.
  */
@@ -64,6 +113,12 @@ typedef int (*canopen_od_callback_handler_t)(const struct canopen_od *od,
 struct canopen_od_entry {
 	/** 8-bit sub-index of this CANopen object dictionary object entry. */
 	const uint8_t subindex;
+	/** Type information for this entry. */
+	const uint8_t type;
+	/** Bit size information for this entry (0 to 64). */
+	const uint8_t bits;
+	/** Attributes for this entry. */
+	uint8_t attr;
 	/** Pointer to the data storage for this entry. */
 	void *data;
 	/** Pointer to the minimum allowed data value for this entry or NULL. */
@@ -72,8 +127,6 @@ struct canopen_od_entry {
 	void *max;
 	/** Size of of this entry (number of bytes used by each of *data, *min, and *max) */
 	size_t size;
-	/** Attributes for this entry. */
-	uint32_t attr;
 };
 
 /**
@@ -108,88 +161,21 @@ struct canopen_od {
 };
 
 /**
- * @name CANopen object dictionary entry type attribute
- * @{
- */
-/** @cond INTERNAL_HIDDEN */
-#define CANOPEN_OD_ATTR_TYPE_MASK       GENMASK(2, 0)
-/** @endcond */
-/** Specify type */
-#define CANOPEN_OD_ATTR_TYPE(_type)     FIELD_PREP(CANOPEN_OD_ATTR_TYPE_MASK, _type)
-/** Get type */
-#define CANOPEN_OD_ATTR_GET_TYPE(_attr) FIELD_GET(CANOPEN_OD_ATTR_TYPE_MASK, _attr)
-/** Boolean type */
-#define CANOPEN_OD_ATTR_TYPE_BOOLEAN    0x1U
-/** Void type */
-#define CANOPEN_OD_ATTR_TYPE_VOID       0x2U
-/** Unsigned integer type */
-#define CANOPEN_OD_ATTR_TYPE_UNSIGNED   0x3U
-/** Signed integer type */
-#define CANOPEN_OD_ATTR_TYPE_INTEGER    0x4U
-/** 32 bit floating point type */
-#define CANOPEN_OD_ATTR_TYPE_REAL32     0x5U
-/** 64 bit floating point type */
-#define CANOPEN_OD_ATTR_TYPE_REAL64     0x6U
-/** NIL (empty) type */
-#define CANOPEN_OD_ATTR_TYPE_NIL        0x7U
-/** @} */
-
-/**
- * @name CANopen object dictionary object entry bit size attribute
- * @{
- */
-/** @cond INTERNAL_HIDDEN */
-#define CANOPEN_OD_ATTR_BIT_SIZE_MASK       GENMASK(9, 3)
-/** @endcond */
-/** Specify bit size (0 to 64) */
-#define CANOPEN_OD_ATTR_BIT_SIZE(_bits)     FIELD_PREP(CANOPEN_OD_ATTR_BIT_SIZE_MASK, _bits)
-/** Get bit size (0 to 64) */
-#define CANOPEN_OD_ATTR_GET_BIT_SIZE(_attr) FIELD_GET(CANOPEN_OD_ATTR_BIT_SIZE_MASK, _attr)
-/** @} */
-
-/**
- * @name CANopen object dictionary object entry access attributes
- * @{
- */
-/** @cond INTERNAL_HIDDEN */
-#define CANOPEN_OD_ATTR_ACCESS_MASK       GENMASK(11, 10)
-/** @endcond */
-/** Read access */
-#define CANOPEN_OD_ATTR_ACCESS_READ       BIT(10)
-/** Write access */
-#define CANOPEN_OD_ATTR_ACCESS_WRITE      BIT(11)
-/** Read/write access */
-#define CANOPEN_OD_ATTR_ACCESS_READ_WRITE \
-	(CANOPEN_OD_ATTR_ACCESS_READ | CANOPEN_OD_ATTR_ACCESS_WRITE)
-/** @} */
-
-/**
- * @name CANopen object dictionary object entry PDO mapping attributes
- * @{
- */
-/** @cond INTERNAL_HIDDEN */
-#define CANOPEN_OD_ATTR_PDO_MAPPABLE_MASK GENMASK(13, 12)
-/** @endcond */
-/** RPDO mappable */
-#define CANOPEN_OD_ATTR_PDO_MAPPABLE_RPDO BIT(12)
-/** TPDO mappable */
-#define CANOPEN_OD_ATTR_PDO_MAPPABLE_TPDO BIT(13)
-/** @} */
-
-/**
  * @name CANopen object dictionary object entry initialization macros
  * @{
  */
 
 /** @cond INTERNAL_HIDDEN */
-#define CANOPEN_OD_ENTRY_INITIALIZER(_subindex, _data, _min, _max, _size, _attr)	\
-{											\
-	.subindex = _subindex,								\
-	.data = _data,									\
-	.min = _min,									\
-	.max = _max,									\
-	.size = _size,									\
-	.attr = _attr,									\
+#define CANOPEN_OD_ENTRY_INITIALIZER(_subindex, _type, _bits, _data, _min, _max, _size, _attr) \
+{												\
+	.subindex = _subindex,									\
+	.type = _type										\
+	.bits = _bits										\
+	.data = _data,										\
+	.min = _min,										\
+	.max = _max,										\
+	.size = _size,										\
+	.attr = _attr,										\
 }
 /** @endcond */
 
@@ -199,12 +185,11 @@ struct canopen_od {
  *
  * @param _subindex 8-bit sub-index of the entry
  * @param _data Pointer to the bool data
- * @param _attr Additional attributes for the entry
+ * @param _attr Attributes for the entry
  */
-#define CANOPEN_OD_ENTRY_BOOLEAN(_subindex, _data, _attr)	\
-	CANOPEN_OD_ENTRY_INITIALIZER(_subindex, _data, NULL, NULL, sizeof(bool), \
-				     CANOPEN_OD_ATTR_TYPE(CANOPEN_OD_ATTR_TYPE_BOOLEAN) | \
-				     CANOPEN_OD_ATTR_BIT_SIZE(1) | _attr)
+#define CANOPEN_OD_ENTRY_BOOLEAN(_subindex, _data, _attr)			\
+	CANOPEN_OD_ENTRY_INITIALIZER(_subindex, CANOPEN_OD_TYPE_BOOLEAN, 1U,	\
+				     _data, NULL, NULL, sizeof(bool), _attr)
 
 /**
  * @brief CANopen object dictionary UNSIGNED8 object entry initialization macro
@@ -214,12 +199,11 @@ struct canopen_od {
  * @param _data Pointer to the uint8_t data
  * @param _min Pointer to the minimum value (or NULL)
  * @param _max Pointer to the maximum value (or NULL)
- * @param _attr Additional attributes for the entry
+ * @param _attr Attributes for the entry
  */
-#define CANOPEN_OD_ENTRY_UNSIGNED8(_subindex, _data, _min, _max, _attr)	\
-	CANOPEN_OD_ENTRY_INITIALIZER(_subindex, _data, _min, _max, sizeof(uint8_t), \
-				     CANOPEN_OD_ATTR_TYPE(CANOPEN_OD_ATTR_TYPE_UNSIGNED) | \
-				     CANOPEN_OD_ATTR_BIT_SIZE(8) | _attr)
+#define CANOPEN_OD_ENTRY_UNSIGNED8(_subindex, _data, _min, _max, _attr)		\
+	CANOPEN_OD_ENTRY_INITIALIZER(_subindex, CANOPEN_OD_TYPE_UNSIGNED, 8U,	\
+				     _data, _min, _max, sizeof(uint8_t), _attr)
 
 /**
  * @brief CANopen object dictionary UNSIGNED16 object entry initialization macro
@@ -229,12 +213,11 @@ struct canopen_od {
  * @param _data Pointer to the uint16_t data
  * @param _min Pointer to the minimum value (or NULL)
  * @param _max Pointer to the maximum value (or NULL)
- * @param _attr Additional attributes for the entry
+ * @param _attr Attributes for the entry
  */
-#define CANOPEN_OD_ENTRY_UNSIGNED16(_subindex, _data, _min, _max, _attr) \
-	CANOPEN_OD_ENTRY_INITIALIZER(_subindex, _data, _min, _max, sizeof(uint16_t), \
-				     CANOPEN_OD_ATTR_TYPE(CANOPEN_OD_ATTR_TYPE_UNSIGNED) | \
-				     CANOPEN_OD_ATTR_BIT_SIZE(16) | _attr)
+#define CANOPEN_OD_ENTRY_UNSIGNED16(_subindex, _data, _min, _max, _attr) 	\
+	CANOPEN_OD_ENTRY_INITIALIZER(_subindex, CANOPEN_OD_TYPE_UNSIGNED, 16U,	\
+				     _data, _min, _max, sizeof(uint16_t), _attr)
 
 /**
  * @brief CANopen object dictionary UNSIGNED24 object entry initialization macro
@@ -244,12 +227,11 @@ struct canopen_od {
  * @param _data Pointer to the uint32_t data
  * @param _min Pointer to the minimum value (or NULL)
  * @param _max Pointer to the maximum value (or NULL)
- * @param _attr Additional attributes for the entry
+ * @param _attr Attributes for the entry
  */
-#define CANOPEN_OD_ENTRY_UNSIGNED24(_subindex, _data, _min, _max, _attr) \
-	CANOPEN_OD_ENTRY_INITIALIZER(_subindex, _data, _min, _max, sizeof(uint32_t), \
-				     CANOPEN_OD_ATTR_TYPE(CANOPEN_OD_ATTR_TYPE_UNSIGNED) | \
-				     CANOPEN_OD_ATTR_BIT_SIZE(24) | _attr)
+#define CANOPEN_OD_ENTRY_UNSIGNED24(_subindex, _data, _min, _max, _attr) 	\
+	CANOPEN_OD_ENTRY_INITIALIZER(_subindex, CANOPEN_OD_TYPE_UNSIGNED, 24U,	\
+				     _data, _min, _max, sizeof(uint32_t), _attr)
 
 /**
  * @brief CANopen object dictionary UNSIGNED32 object entry initialization macro
@@ -259,12 +241,11 @@ struct canopen_od {
  * @param _data Pointer to the uint32_t data
  * @param _min Pointer to the minimum value (or NULL)
  * @param _max Pointer to the maximum value (or NULL)
- * @param _attr Additional attributes for the entry
+ * @param _attr Attributes for the entry
  */
-#define CANOPEN_OD_ENTRY_UNSIGNED32(_subindex, _data, _min, _max, _attr) \
-	CANOPEN_OD_ENTRY_INITIALIZER(_subindex, _data, _min, _max, sizeof(uint32_t), \
-				     CANOPEN_OD_ATTR_TYPE(CANOPEN_OD_ATTR_TYPE_UNSIGNED) | \
-				     CANOPEN_OD_ATTR_BIT_SIZE(32) | _attr)
+#define CANOPEN_OD_ENTRY_UNSIGNED32(_subindex, _data, _min, _max, _attr) 	\
+	CANOPEN_OD_ENTRY_INITIALIZER(_subindex, CANOPEN_OD_TYPE_UNSIGNED, 32U,	\
+				     _data, _min, _max, sizeof(uint32_t), _attr)
 
 /**
  * @brief CANopen object dictionary UNSIGNED40 object entry initialization macro
@@ -274,12 +255,11 @@ struct canopen_od {
  * @param _data Pointer to the uint64_t data
  * @param _min Pointer to the minimum value (or NULL)
  * @param _max Pointer to the maximum value (or NULL)
- * @param _attr Additional attributes for the entry
+ * @param _attr Attributes for the entry
  */
-#define CANOPEN_OD_ENTRY_UNSIGNED40(_subindex, _data, _min, _max, _attr) \
-	CANOPEN_OD_ENTRY_INITIALIZER(_subindex, _data, _min, _max, sizeof(uint64_t), \
-				     CANOPEN_OD_ATTR_TYPE(CANOPEN_OD_ATTR_TYPE_UNSIGNED) | \
-				     CANOPEN_OD_ATTR_BIT_SIZE(40) | _attr)
+#define CANOPEN_OD_ENTRY_UNSIGNED40(_subindex, _data, _min, _max, _attr) 	\
+	CANOPEN_OD_ENTRY_INITIALIZER(_subindex, CANOPEN_OD_TYPE_UNSIGNED, 40U,	\
+				     _data, _min, _max, sizeof(uint64_t), _attr)
 
 /**
  * @brief CANopen object dictionary UNSIGNED48 object entry initialization macro
@@ -289,12 +269,11 @@ struct canopen_od {
  * @param _data Pointer to the uint64_t data
  * @param _min Pointer to the minimum value (or NULL)
  * @param _max Pointer to the maximum value (or NULL)
- * @param _attr Additional attributes for the entry
+ * @param _attr Attributes for the entry
  */
-#define CANOPEN_OD_ENTRY_UNSIGNED48(_subindex, _data, _min, _max, _attr) \
-	CANOPEN_OD_ENTRY_INITIALIZER(_subindex, _data, _min, _max, sizeof(uint64_t), \
-				     CANOPEN_OD_ATTR_TYPE(CANOPEN_OD_ATTR_TYPE_UNSIGNED) | \
-				     CANOPEN_OD_ATTR_BIT_SIZE(48) | _attr)
+#define CANOPEN_OD_ENTRY_UNSIGNED48(_subindex, _data, _min, _max, _attr) 	\
+	CANOPEN_OD_ENTRY_INITIALIZER(_subindex, CANOPEN_OD_TYPE_UNSIGNED, 48U,	\
+				     _data, _min, _max, sizeof(uint64_t), _attr)
 
 /**
  * @brief CANopen object dictionary UNSIGNED56 object entry initialization macro
@@ -304,12 +283,11 @@ struct canopen_od {
  * @param _data Pointer to the uint64_t data
  * @param _min Pointer to the minimum value (or NULL)
  * @param _max Pointer to the maximum value (or NULL)
- * @param _attr Additional attributes for the entry
+ * @param _attr Attributes for the entry
  */
-#define CANOPEN_OD_ENTRY_UNSIGNED56(_subindex, _data, _min, _max, _attr) \
-	CANOPEN_OD_ENTRY_INITIALIZER(_subindex, _data, _min, _max, sizeof(uint64_t), \
-				     CANOPEN_OD_ATTR_TYPE(CANOPEN_OD_ATTR_TYPE_UNSIGNED) | \
-				     CANOPEN_OD_ATTR_BIT_SIZE(56) | _attr)
+#define CANOPEN_OD_ENTRY_UNSIGNED56(_subindex, _data, _min, _max, _attr) 	\
+	CANOPEN_OD_ENTRY_INITIALIZER(_subindex, CANOPEN_OD_TYPE_UNSIGNED, 56U,	\
+				     _data, _min, _max, sizeof(uint64_t), _attr)
 
 /**
  * @brief CANopen object dictionary UNSIGNED64 object entry initialization macro
@@ -319,12 +297,11 @@ struct canopen_od {
  * @param _data Pointer to the uint64_t data
  * @param _min Pointer to the minimum value (or NULL)
  * @param _max Pointer to the maximum value (or NULL)
- * @param _attr Additional attributes for the entry
+ * @param _attr Attributes for the entry
  */
-#define CANOPEN_OD_ENTRY_UNSIGNED64(_subindex, _data, _min, _max, _attr) \
-	CANOPEN_OD_ENTRY_INITIALIZER(_subindex, _data, _min, _max, sizeof(uint64_t), \
-				     CANOPEN_OD_ATTR_TYPE(CANOPEN_OD_ATTR_TYPE_UNSIGNED) | \
-				     CANOPEN_OD_ATTR_BIT_SIZE(64) | _attr)
+#define CANOPEN_OD_ENTRY_UNSIGNED64(_subindex, _data, _min, _max, _attr)	\
+	CANOPEN_OD_ENTRY_INITIALIZER(_subindex, CANOPEN_OD_TYPE_UNSIGNED, 64U,	\
+				     _data, _min, _max, sizeof(uint64_t), _attr)
 
 /**
  * @brief CANopen object dictionary INTEGER8 object entry initialization macro
@@ -334,12 +311,11 @@ struct canopen_od {
  * @param _data Pointer to the int8_t data
  * @param _min Pointer to the minimum value (or NULL)
  * @param _max Pointer to the maximum value (or NULL)
- * @param _attr Additional attributes for the entry
+ * @param _attr Attributes for the entry
  */
-#define CANOPEN_OD_ENTRY_INTEGER8(_subindex, _data, _min, _max, _attr)	\
-	CANOPEN_OD_ENTRY_INITIALIZER(_subindex, _data, _min, _max, sizeof(int8_t), \
-				     CANOPEN_OD_ATTR_TYPE(CANOPEN_OD_ATTR_TYPE_INTEGER) | \
-				     CANOPEN_OD_ATTR_BIT_SIZE(8) | _attr)
+#define CANOPEN_OD_ENTRY_INTEGER8(_subindex, _data, _min, _max, _attr)		\
+	CANOPEN_OD_ENTRY_INITIALIZER(_subindex, CANOPEN_OD_TYPE_INTEGER, 8U,	\
+				     _data, _min, _max, sizeof(int8_t), _attr)
 
 /**
  * @brief CANopen object dictionary INTEGER16 object entry initialization macro
@@ -349,7 +325,7 @@ struct canopen_od {
  * @param _data Pointer to the int16_t data
  * @param _min Pointer to the minimum value (or NULL)
  * @param _max Pointer to the maximum value (or NULL)
- * @param _attr Additional attributes for the entry
+ * @param _attr Attributes for the entry
  */
 #define CANOPEN_OD_ENTRY_INTEGER16(_subindex, _data, _min, _max, _attr) \
 	CANOPEN_OD_ENTRY_INITIALIZER(_subindex, _data, _min, _max, sizeof(int16_t), \
@@ -364,7 +340,7 @@ struct canopen_od {
  * @param _data Pointer to the int32_t data
  * @param _min Pointer to the minimum value (or NULL)
  * @param _max Pointer to the maximum value (or NULL)
- * @param _attr Additional attributes for the entry
+ * @param _attr Attributes for the entry
  */
 #define CANOPEN_OD_ENTRY_INTEGER24(_subindex, _data, _min, _max, _attr) \
 	CANOPEN_OD_ENTRY_INITIALIZER(_subindex, _data, _min, _max, sizeof(int32_t), \
@@ -379,7 +355,7 @@ struct canopen_od {
  * @param _data Pointer to the int32_t data
  * @param _min Pointer to the minimum value (or NULL)
  * @param _max Pointer to the maximum value (or NULL)
- * @param _attr Additional attributes for the entry
+ * @param _attr Attributes for the entry
  */
 #define CANOPEN_OD_ENTRY_INTEGER32(_subindex, _data, _min, _max, _attr) \
 	CANOPEN_OD_ENTRY_INITIALIZER(_subindex, _data, _min, _max, sizeof(int32_t), \
@@ -394,7 +370,7 @@ struct canopen_od {
  * @param _data Pointer to the int64_t data
  * @param _min Pointer to the minimum value (or NULL)
  * @param _max Pointer to the maximum value (or NULL)
- * @param _attr Additional attributes for the entry
+ * @param _attr Attributes for the entry
  */
 #define CANOPEN_OD_ENTRY_INTEGER40(_subindex, _data, _min, _max, _attr) \
 	CANOPEN_OD_ENTRY_INITIALIZER(_subindex, _data, _min, _max, sizeof(int64_t), \
@@ -409,7 +385,7 @@ struct canopen_od {
  * @param _data Pointer to the int64_t data
  * @param _min Pointer to the minimum value (or NULL)
  * @param _max Pointer to the maximum value (or NULL)
- * @param _attr Additional attributes for the entry
+ * @param _attr Attributes for the entry
  */
 #define CANOPEN_OD_ENTRY_INTEGER48(_subindex, _data, _min, _max, _attr) \
 	CANOPEN_OD_ENTRY_INITIALIZER(_subindex, _data, _min, _max, sizeof(int64_t), \
@@ -424,7 +400,7 @@ struct canopen_od {
  * @param _data Pointer to the int64_t data
  * @param _min Pointer to the minimum value (or NULL)
  * @param _max Pointer to the maximum value (or NULL)
- * @param _attr Additional attributes for the entry
+ * @param _attr Attributes for the entry
  */
 #define CANOPEN_OD_ENTRY_INTEGER56(_subindex, _data, _min, _max, _attr) \
 	CANOPEN_OD_ENTRY_INITIALIZER(_subindex, _data, _min, _max, sizeof(int64_t), \
@@ -439,7 +415,7 @@ struct canopen_od {
  * @param _data Pointer to the int64_t data
  * @param _min Pointer to the minimum value (or NULL)
  * @param _max Pointer to the maximum value (or NULL)
- * @param _attr Additional attributes for the entry
+ * @param _attr Attributes for the entry
  */
 #define CANOPEN_OD_ENTRY_INTEGER64(_subindex, _data, _min, _max, _attr) \
 	CANOPEN_OD_ENTRY_INITIALIZER(_subindex, _data, _min, _max, sizeof(int64_t), \
@@ -454,7 +430,7 @@ struct canopen_od {
  * @param _data Pointer to the float data
  * @param _min Pointer to the minimum value (or NULL)
  * @param _max Pointer to the maximum value (or NULL)
- * @param _attr Additional attributes for the entry
+ * @param _attr Attributes for the entry
  */
 #define CANOPEN_OD_ENTRY_REAL32(_subindex, _data, _min, _max, _attr) \
 	CANOPEN_OD_ENTRY_INITIALIZER(_subindex, _data, _min, _max, sizeof(float), \
@@ -469,7 +445,7 @@ struct canopen_od {
  * @param _data Pointer to the double data
  * @param _min Pointer to the minimum value (or NULL)
  * @param _max Pointer to the maximum value (or NULL)
- * @param _attr Additional attributes for the entry
+ * @param _attr Attributes for the entry
  */
 #define CANOPEN_OD_ENTRY_REAL64(_subindex, _data, _min, _max, _attr) \
 	CANOPEN_OD_ENTRY_INITIALIZER(_subindex, _data, _min, _max, sizeof(double), \
@@ -482,7 +458,7 @@ struct canopen_od {
  *
  * @param _subindex 8-bit sub-index of the entry
  * @param _data Pointer to the uint64_t data
- * @param _attr Additional attributes for the entry
+ * @param _attr Attributes for the entry
  */
 #define CANOPEN_OD_ENTRY_TIME_OF_DAY(_subindex, _data, _attr) \
 	CANOPEN_OD_ENTRY_INITIALIZER(_subindex, _data, NULL, NULL, sizeof(uint64_t), \
@@ -495,7 +471,7 @@ struct canopen_od {
  *
  * @param _subindex 8-bit sub-index of the entry
  * @param _data Pointer to the uint64_t data
- * @param _attr Additional attributes for the entry
+ * @param _attr Attributes for the entry
  */
 #define CANOPEN_OD_ENTRY_TIME_DIFFERENCE(_subindex, _data, _attr) \
 	CANOPEN_OD_ENTRY_INITIALIZER(_subindex, _data, NULL, NULL, sizeof(uint64_t), \
@@ -509,7 +485,7 @@ struct canopen_od {
  * @param _subindex 8-bit sub-index of the entry
  * @param _data Pointer to the uint8_t data
  * @param _size Size of the data in bytes
- * @param _attr Additional attributes for the entry
+ * @param _attr Attributes for the entry
  */
 #define CANOPEN_OD_ENTRY_VISIBLE_STRING(_subindex, _data, _size, _attr) \
 	CANOPEN_OD_ENTRY_INITIALIZER(_subindex, _data, NULL, NULL, _size, \
@@ -523,7 +499,7 @@ struct canopen_od {
  * @param _subindex 8-bit sub-index of the entry
  * @param _data Pointer to the uint8_t data
  * @param _size Size of the data in bytes
- * @param _attr Additional attributes for the entry
+ * @param _attr Attributes for the entry
  */
 #define CANOPEN_OD_ENTRY_OCTET_STRING(_subindex, _data, _size, _attr) \
 	CANOPEN_OD_ENTRY_INITIALIZER(_subindex, _data, NULL, NULL, _size, \
@@ -537,7 +513,7 @@ struct canopen_od {
  * @param _subindex 8-bit sub-index of the entry
  * @param _data Pointer to the uint16_t data
  * @param _size Size of the data in bytes
- * @param _attr Additional attributes for the entry
+ * @param _attr Attributes for the entry
  */
 #define CANOPEN_OD_ENTRY_UNICODE_STRING(_subindex, _data, _size, _attr) \
 	CANOPEN_OD_ENTRY_INITIALIZER(_subindex, _data, NULL, NULL, _size, \
@@ -919,7 +895,7 @@ static inline int canopen_od_read(struct canopen_od *od, uint16_t index, uint8_t
 static inline int canopen_od_read_u32_by_handle_unlocked(struct canopen_od *od, canopen_od_handle_t handle,
 							 uint32_t *value, enum canopen_sdo_abort_code *abort_code)
 {
-	/* TODO: check attr type and bits */
+	/* TODO: check type and bits */
 
 	return canopen_od_read_by_handle_unlocked(od, handle, value, sizeof(*value), abort_code);
 }
@@ -927,7 +903,7 @@ static inline int canopen_od_read_u32_by_handle_unlocked(struct canopen_od *od, 
 static inline int canopen_od_read_u32_by_handle(struct canopen_od *od, canopen_od_handle_t handle,
 						uint32_t *value, enum canopen_sdo_abort_code *abort_code)
 {
-	/* TODO: check attr type and bits */
+	/* TODO: check type and bits */
 
 	return canopen_od_read_by_handle(od, handle, value, sizeof(*value), abort_code);
 }
@@ -935,7 +911,7 @@ static inline int canopen_od_read_u32_by_handle(struct canopen_od *od, canopen_o
 static inline int canopen_od_read_u32(struct canopen_od *od, uint16_t index, uint8_t subindex,
 				      uint32_t *value, enum canopen_sdo_abort_code *abort_code)
 {
-	/* TODO: check attr type and bits */
+	/* TODO: check type and bits */
 
 	return canopen_od_read(od, index, subindex, value, sizeof(*value), abort_code);
 }
