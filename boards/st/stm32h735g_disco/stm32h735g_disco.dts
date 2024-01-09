@@ -20,6 +20,7 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,canbus = &fdcan1;
+		zephyr,display = &ltdc;
 	};
 
 	leds {
@@ -257,4 +258,41 @@ zephyr_udc0: &usbotg_hs {
 	status = "okay";
 	pinctrl-0 = <&usb_otg_hs_dm_pa11 &usb_otg_hs_dp_pa12>;
 	pinctrl-names = "default";
+};
+
+&ltdc {
+	pinctrl-0 = <&ltdc_r0_pe0 &ltdc_r1_ph3 &ltdc_r2_ph8 &ltdc_r3_ph9
+		     &ltdc_r4_ph10 &ltdc_r5_ph11 &ltdc_r6_pe1 &ltdc_r7_pe15
+		     &ltdc_g0_pb1 &ltdc_g1_pb0 &ltdc_g2_pa6 &ltdc_g3_pe11
+		     &ltdc_g4_ph15 &ltdc_g5_ph4 &ltdc_g6_pc7 &ltdc_g7_pd3
+		     &ltdc_b0_pg14 &ltdc_b1_pd0 &ltdc_b2_pd6 &ltdc_b3_pa8
+		     &ltdc_b4_pe12 &ltdc_b5_pa3 &ltdc_b6_pb8 &ltdc_b7_pb9
+		     &ltdc_de_pe13 &ltdc_clk_pg7 &ltdc_hsync_pc6 &ltdc_vsync_pa4>;
+	pinctrl-names = "default";
+	disp-on-gpios = <&gpiod 10 GPIO_ACTIVE_HIGH>;
+	bl-ctrl-gpios = <&gpiog 15 GPIO_ACTIVE_HIGH>;
+	/*ext-sdram = <&psram>;*/
+	status = "okay";
+
+	width = <480>;
+	height = <272>;
+	pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
+
+	display-timings {
+		compatible = "zephyr,panel-timing";
+		de-active = <0>;
+		pixelclk-active = <0>;
+		hsync-active = <0>;
+		vsync-active = <0>;
+		hsync-len = <1>;
+		vsync-len = <10>;
+		hback-porch = <43>;
+		vback-porch = <12>;
+		hfront-porch = <8>;
+		vfront-porch = <4>;
+	};
+
+	def-back-color-red = <0xff>;
+	def-back-color-green = <0xff>;
+	def-back-color-blue = <0xff>;
 };

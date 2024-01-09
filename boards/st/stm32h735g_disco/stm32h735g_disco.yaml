@@ -15,4 +15,5 @@ supported:
   - counter
   - can
   - usb_device
+  - display
 vendor: st
