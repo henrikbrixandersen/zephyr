@@ -15,4 +15,5 @@ supported:
   - memc
   - adc
   - counter
+  - display
 vendor: st
