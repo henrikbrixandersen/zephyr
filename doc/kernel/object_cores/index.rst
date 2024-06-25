@@ -25,6 +25,7 @@ Object cores have been integrated into following kernel objects:
  * :ref:`Condition Variables <condvar>`
  * :ref:`Events <events>`
  * :ref:`FIFOs <fifos_v2>` and :ref:`LIFOs <lifos_v2>`
+ * :ref:`Priority Queues <priority_queues>`
  * :ref:`Mailboxes <mailboxes_v2>`
  * :ref:`Memory Slabs <memory_slabs_v2>`
  * :ref:`Message Queues <message_queues_v2>`
@@ -212,6 +213,7 @@ Related configuration options:
 * :kconfig:option:`CONFIG_OBJ_CORE_EVENT`
 * :kconfig:option:`CONFIG_OBJ_CORE_FIFO`
 * :kconfig:option:`CONFIG_OBJ_CORE_LIFO`
+* :kconfig:option:`CONFIG_OBJ_CORE_PRIOQ`
 * :kconfig:option:`CONFIG_OBJ_CORE_MAILBOX`
 * :kconfig:option:`CONFIG_OBJ_CORE_MEM_SLAB`
 * :kconfig:option:`CONFIG_OBJ_CORE_MSGQ`

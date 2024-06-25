@@ -40,6 +40,13 @@ config OBJ_CORE_LIFO
 	  When enabled, this option integrates LIFOs into the object core
 	  framework.
 
+config OBJ_CORE_PRIOQ
+	bool "Integrate priority queues into object core framework"
+	default y
+	help
+	  When enabled, this option integrates priority queues into the object core
+	  framework.
+
 config OBJ_CORE_MAILBOX
 	bool "Integrate mailboxes into object core framework"
 	default y

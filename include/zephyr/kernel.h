@@ -77,6 +77,7 @@ struct k_pipe;
 struct k_queue;
 struct k_fifo;
 struct k_lifo;
+struct k_prioq;
 struct k_stack;
 struct k_mem_slab;
 struct k_timer;
@@ -1983,6 +1984,25 @@ __syscall int32_t k_queue_alloc_prepend(struct k_queue *queue, void *data);
 void k_queue_insert(struct k_queue *queue, void *prev, void *data);
 
 /**
+ * @brief Inserts an element to a queue.
+ *
+ * This routine inserts a data item to @a queue after previous item. There is
+ * an implicit memory allocation to create an additional temporary bookkeeping
+ * data structure from the calling thread's resource pool, which is
+ * automatically freed when the item is removed. The data itself is not copied.
+ *
+ * @funcprops \isr_ok
+ *
+ * @param queue Address of the queue.
+ * @param prev Address of the previous data item.
+ * @param data Address of the data item.
+ *
+ * @retval 0 on success
+ * @retval -ENOMEM if there isn't sufficient RAM in the caller's resource pool
+ */
+__syscall int32_t k_queue_alloc_insert(struct k_queue *queue, void *prev, void *data);
+
+/**
  * @brief Atomically append a list of elements to a queue.
  *
  * This routine adds a list of data items to @a queue in one operation.
@@ -2746,6 +2766,208 @@ struct k_lifo {
 #define K_LIFO_DEFINE(name) \
 	STRUCT_SECTION_ITERABLE(k_lifo, name) = \
 		Z_LIFO_INITIALIZER(name)
+
+/** @} */
+
+/**
+ * @typedef k_prioq_lessthan_t
+ * @brief Priority queue comparison predicate
+ *
+ * Compares the two nodes and returns true if data item A is strictly less
+ * than data item B according to the priority queue's sorting criteria, false
+ * otherwise.
+ *
+ * Note that during insert, the new data item being inserted will always be
+ * "A", where "B" is the existing data item within the priority queue against
+ * which it is being compared.  This trait can be used (with care!) to
+ * implement "most/least recently added" semantics between data items which
+ * would otherwise compare as equal.
+ */
+typedef bool (*k_prioq_lessthan_t)(void *a, void *b);
+
+struct k_prioq {
+	struct k_queue _queue;
+	k_prioq_lessthan_t _lessthan_fn;
+#ifdef CONFIG_OBJ_CORE_PRIOQ
+	struct k_obj_core  obj_core;
+#endif
+};
+
+/**
+ * @cond INTERNAL_HIDDEN
+ */
+
+#define Z_PRIOQ_INITIALIZER(obj, lessthan_fn) \
+	{ \
+	._queue = Z_QUEUE_INITIALIZER(obj._queue), \
+	._lessthan_fn = lessthan_fn, \
+	}
+
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
+
+/**
+ * @defgroup prioq_apis Priority Queue APIs
+ * @ingroup kernel_apis
+ * @{
+ */
+
+/**
+ * @brief Initialize a priority queue.
+ *
+ * This routine initializes a priority queue object, prior to its first use.
+ *
+ * @param prioq Address of the priority queue.
+ */
+#define k_prioq_init(prioq, lessthan_fn)                       \
+	({                                                     \
+	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_prioq, init, prioq); \
+	k_queue_init(&(prioq)->_queue);                        \
+	(prioq)->_lessthan_fn = lessthan_fn;		       \
+	K_OBJ_CORE_INIT(K_OBJ_CORE(prioq), _obj_type_prioq);   \
+	K_OBJ_CORE_LINK(K_OBJ_CORE(prioq));                    \
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_prioq, init, prioq);  \
+	})
+
+/**
+ * @brief Add an element to a priority queue.
+ *
+ * This routine adds a data item to @a prioq. A priority queue data item must be
+ * aligned on a word boundary, and the first word of the item is
+ * reserved for the kernel's use.
+ *
+ * @funcprops \isr_ok
+ *
+ * @param prioq Address of the priority queue.
+ * @param data Address of the data item.
+ */
+/* TODO: use _insert() based on _lessthan_fn */
+#define k_prioq_put(prioq, data) \
+	({ \
+	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_prioq, put, prioq, data); \
+	k_queue_prepend(&(prioq)->_queue, data); \
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_prioq, put, prioq, data); \
+	})
+
+/**
+ * @brief Add an element to a priority queue.
+ *
+ * This routine adds a data item to @a prioq. There is an implicit memory
+ * allocation to create an additional temporary bookkeeping data structure from
+ * the calling thread's resource pool, which is automatically freed when the
+ * item is removed. The data itself is not copied.
+ *
+ * @funcprops \isr_ok
+ *
+ * @param prioq Address of the priority queue.
+ * @param data Address of the data item.
+ *
+ * @retval 0 on success
+ * @retval -ENOMEM if there isn't sufficient RAM in the caller's resource pool
+ */
+/* TODO: use _alloc_insert() based on _lessthan_fn */
+#define k_prioq_alloc_put(prioq, data) \
+	({ \
+	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_prioq, alloc_put, prioq, data); \
+	int lap_ret = k_queue_alloc_prepend(&(prioq)->_queue, data); \
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_prioq, alloc_put, prioq, data, lap_ret); \
+	lap_ret; \
+	})
+
+/**
+ * @brief Get an element from a priority queue.
+ *
+ * This routine removes the highest priority data item from @a priority queue.
+ * The first word of the data item is reserved for the kernel's use.
+ *
+ * @note @a timeout must be set to K_NO_WAIT if called from ISR.
+ *
+ * @funcprops \isr_ok
+ *
+ * @param prioq Address of the priority queue.
+ * @param timeout Waiting period to obtain a data item,
+ *                or one of the special values K_NO_WAIT and K_FOREVER.
+ *
+ * @return Address of the data item if successful; NULL if returned
+ * without waiting, or waiting period timed out.
+ */
+#define k_prioq_get(prioq, timeout) \
+	({ \
+	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_prioq, get, prioq, timeout); \
+	void *lg_ret = k_queue_get(&(prioq)->_queue, timeout); \
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_prioq, get, prioq, timeout, lg_ret); \
+	lg_ret; \
+	})
+
+/**
+ * @brief Query a priority queue to see if it has data available.
+ *
+ * Note that the data might be already gone by the time this function returns
+ * if other threads is also trying to read from the priority queue.
+ *
+ * @funcprops \isr_ok
+ *
+ * @param fifo Address of the priority queue.
+ *
+ * @return Non-zero if the priority queue is empty.
+ * @return 0 if data is available.
+ */
+#define k_prioq_is_empty(prioq) \
+	k_queue_is_empty(&(prioq)->_queue)
+
+/**
+ * @brief Peek highest priority item of a priority queue.
+ *
+ * Return highest priority item from a priority queue without removing it. A usecase
+ * for this is if elements of the priority queue object are themselves containers. Then
+ * on each iteration of processing, the highest priortity container will be peeked,
+ * and some data processed out of it, and only if the container is empty,
+ * it will be completely remove from the priority queue.
+ *
+ * @param prioq Address of the priority queue.
+ *
+ * @return Highest priority item, or NULL if the priority queue is empty.
+ */
+#define k_prioq_peek_head(prioq) \
+	({ \
+	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_prioq, peek, prioq); \
+	void *fph_ret = k_queue_peek_head(&(prioq)->_queue); \
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_prioq, peek_head, prioq, fph_ret); \
+	fph_ret; \
+	})
+
+/**
+ * @brief Peek lowest priority item of a priority queue.
+ *
+ * Return lowest priority item from a priority queue (without removing it). A usecase
+ * for this is if elements of the priority queue are themselves containers. Then
+ * it may be useful to add more data to the lowest priority container in a priority queue.
+ *
+ * @param fifo Address of the priority queue.
+ *
+ * @return Lowest priority itm, or NULL if a priorirt queue is empty.
+ */
+#define k_prioq_peek_tail(prioq) \
+	({ \
+	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_prioq, peek_tail, prioq); \
+	void *fpt_ret = k_queue_peek_tail(&(prioq)->_queue); \
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_prioq, peek_tail, prioq, fpt_ret); \
+	fpt_ret; \
+	})
+
+/**
+ * @brief Statically define and initialize a priority queue.
+ *
+ * The priority queue can be accessed outside the module where it is defined using:
+ *
+ * @code extern struct k_prioq <name>; @endcode
+ *
+ * @param name Name of the priority queue.
+ */
+#define K_PRIOQ_DEFINE(name, lessthan_fn) \
+	STRUCT_SECTION_ITERABLE(k_prioq, name) = \
+		Z_PRIOQ_INITIALIZER(name, lessthan_fn)
 
 /** @} */
 
@@ -5596,7 +5818,7 @@ enum _poll_types_bits {
 	/* semaphore availability */
 	_POLL_TYPE_SEM_AVAILABLE,
 
-	/* queue/FIFO/LIFO data availability */
+	/* queue/FIFO/LIFO/prioq data availability */
 	_POLL_TYPE_DATA_AVAILABLE,
 
 	/* msgq data availability */
@@ -5621,10 +5843,10 @@ enum _poll_states_bits {
 	/* semaphore is available */
 	_POLL_STATE_SEM_AVAILABLE,
 
-	/* data is available to read on queue/FIFO/LIFO */
+	/* data is available to read on queue/FIFO/LIFO/prioq */
 	_POLL_STATE_DATA_AVAILABLE,
 
-	/* queue/FIFO/LIFO wait was cancelled */
+	/* queue/FIFO/LIFO/prioq wait was cancelled */
 	_POLL_STATE_CANCELLED,
 
 	/* data is available to read on a message queue */

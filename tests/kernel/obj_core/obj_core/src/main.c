@@ -26,6 +26,10 @@ static struct k_fifo fifo2;
 static K_LIFO_DEFINE(lifo1);
 static struct k_lifo lifo2;
 
+static bool prioq_test_predicate(void *a, void *b);
+static K_PRIOQ_DEFINE(prioq1, prioq_test_predicate);
+static struct k_prioq prioq2;
+
 K_PIPE_DEFINE(pipe1, 16, 8);
 static struct k_pipe pipe2;
 static char pipe2_buffer[16];
@@ -231,6 +235,18 @@ ZTEST(obj_core, test_obj_core_lifo)
 	k_lifo_init(&lifo2);
 	common_obj_core_test(K_OBJ_TYPE_LIFO_ID, "LIFO",
 			     K_OBJ_CORE(&lifo1), K_OBJ_CORE(&lifo2));
+}
+
+static bool prioq_test_predicate(void *a, void *b)
+{
+	return false;
+}
+
+ZTEST(obj_core, test_obj_core_prioq)
+{
+	k_prioq_init(&prioq2, prioq_test_predicate);
+	common_obj_core_test(K_OBJ_TYPE_PRIOQ_ID, "PRIQ",
+			     K_OBJ_CORE(&prioq1), K_OBJ_CORE(&prioq2));
 }
 
 ZTEST(obj_core, test_obj_core_pipe)

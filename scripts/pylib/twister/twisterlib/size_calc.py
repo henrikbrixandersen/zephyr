@@ -38,6 +38,7 @@ class SizeCalculator:
         "app_shmem_regions",
         "_k_fifo_area",
         "_k_lifo_area",
+        "_k_prioq_area",
         "k_stack_area",
         "k_msgq_area",
         "k_mbox_area",

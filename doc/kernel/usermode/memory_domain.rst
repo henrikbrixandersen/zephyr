@@ -128,10 +128,10 @@ noted for users who do not want heap allocations within their application:
    copy of the provided events array while waiting for an event. This copy is
    freed when :c:func:`k_poll` returns for any reason.
 
- - :c:func:`k_queue_alloc_prepend` and :c:func:`k_queue_alloc_append`
-   allocate a container structure to place the data in, since the internal
-   bookkeeping information that defines the queue cannot be placed in the
-   memory provided by the user.
+ - :c:func:`k_queue_alloc_prepend`, :c:func:`k_queue_alloc_append`, and
+   :c:func:`k_queue_alloc_insert` allocate a container structure to place the
+   data in, since the internal bookkeeping information that defines the queue
+   cannot be placed in the memory provided by the user.
 
  - :c:func:`k_object_alloc` allows for entire kernel objects to be
    dynamically allocated at runtime and a usable pointer to them returned to

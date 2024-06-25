@@ -244,6 +244,27 @@ static inline int32_t z_vrfy_k_queue_alloc_prepend(struct k_queue *queue,
 #include <zephyr/syscalls/k_queue_alloc_prepend_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
+int32_t z_impl_k_queue_alloc_insert(struct k_queue *queue, void *prev, void *data)
+{
+	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_queue, alloc_insert, queue);
+
+	int32_t ret = queue_insert(queue, prev, data, true, false);
+
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_queue, alloc_insert, queue, ret);
+
+	return ret;
+}
+
+#ifdef CONFIG_USERSPACE
+static inline int32_t z_vrfy_k_queue_alloc_insert(struct k_queue *queue,
+						  void *prev, void *data)
+{
+	K_OOPS(K_SYSCALL_OBJ(queue, K_OBJ_QUEUE));
+	return z_impl_k_queue_alloc_insert(queue, prev, data);
+}
+#include <zephyr/syscalls/k_queue_alloc_insert_mrsh.c>
+#endif /* CONFIG_USERSPACE */
+
 int k_queue_append_list(struct k_queue *queue, void *head, void *tail)
 {
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_queue, append_list, queue);
@@ -478,3 +499,26 @@ static int init_lifo_obj_core_list(void)
 SYS_INIT(init_lifo_obj_core_list, PRE_KERNEL_1,
 	 CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 #endif /* CONFIG_OBJ_CORE_LIFO */
+
+#ifdef CONFIG_OBJ_CORE_PRIOQ
+struct k_obj_type _obj_type_prioq;
+
+static int init_prioq_obj_core_list(void)
+{
+	/* Initialize prioq object type */
+
+	z_obj_type_init(&_obj_type_prioq, K_OBJ_TYPE_PRIOQ_ID,
+			offsetof(struct k_prioq, obj_core));
+
+	/* Initialize and link statically defined prioq */
+
+	STRUCT_SECTION_FOREACH(k_prioq, prioq) {
+		k_obj_core_init_and_link(K_OBJ_CORE(prioq), &_obj_type_prioq);
+	}
+
+	return 0;
+}
+
+SYS_INIT(init_prioq_obj_core_list, PRE_KERNEL_1,
+	 CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
+#endif /* CONFIG_OBJ_CORE_PRIOQ */

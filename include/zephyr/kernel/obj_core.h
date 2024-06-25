@@ -39,6 +39,8 @@
 #define K_OBJ_TYPE_KERNEL_ID     K_OBJ_TYPE_ID_GEN("KRNL")
 /** LIFO object type */
 #define K_OBJ_TYPE_LIFO_ID       K_OBJ_TYPE_ID_GEN("LIFO")
+/** Priority Queue object type */
+#define K_OBJ_TYPE_PRIOQ_ID      K_OBJ_TYPE_ID_GEN("PRIQ")
 /** Memory block object type */
 #define K_OBJ_TYPE_MEM_BLOCK_ID  K_OBJ_TYPE_ID_GEN("MBLK")
 /** Mailbox object type */
