@@ -23,7 +23,8 @@
 
 #include <zephyr/device.h>
 
-typedef int (*gs_usb_timestamp_callback_t)(const struct device *dev, uint32_t *timestamp);
+typedef int (*gs_usb_timestamp_callback_t)(const struct device *dev, uint32_t *timestamp,
+					   void *user_data);
 
 typedef int (*gs_usb_identify_callback_t)(const struct device *dev, uint16_t ch, bool identify,
 					  void *user_data);
@@ -35,7 +36,9 @@ typedef int (*gs_usb_get_termination_callback_t)(const struct device *dev, uint1
 						 bool *terminated, void *user_data);
 
 struct gs_usb_ops {
+#ifdef CONFIG_USBD_GS_USB_TIMESTAMP
 	gs_usb_timestamp_callback_t timestamp;
+#endif /* CONFIG_USBD_GS_USB_TIMESTAMP */
 	gs_usb_set_termination_callback_t set_termination;
 	gs_usb_get_termination_callback_t get_termination;
 	gs_usb_identify_callback_t identify;

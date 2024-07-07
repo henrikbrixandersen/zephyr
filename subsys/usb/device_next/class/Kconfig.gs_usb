@@ -37,6 +37,11 @@ config USBD_GS_USB_POOL_SIZE
 	  frames. The pool is used for both RX and TX, and shared between all channels of a given
 	  gs_usb instance.
 
+config USBD_GS_USB_TIMESTAMP
+	bool "Enable support for hardware timestamps"
+	help
+	  Enable support for hardware timestamps provided by the application.
+
 config USBD_GS_USB_RX_THREAD_STACK_SIZE
 	int "Stack size for the RX thread"
 	default 1024
