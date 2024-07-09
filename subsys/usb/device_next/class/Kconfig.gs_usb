@@ -7,7 +7,6 @@ config USBD_GS_USB
 	depends on DT_HAS_ZEPHYR_GS_USB_ENABLED
 	select NET_BUF
 	select CAN
-	imply CAN_MANUAL_RECOVERY_MODE
 	imply CAN_ACCEPT_RTR
 	help
 	  Geschwister Schneider USB/CAN (gs_usb) device class support.

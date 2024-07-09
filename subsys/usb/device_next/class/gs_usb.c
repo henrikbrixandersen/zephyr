@@ -253,10 +253,10 @@ struct gs_usb_desc {
 
 struct gs_usb_channel_data {
 	const struct device *dev;
-	uint32_t supported_features;
-	uint32_t enabled_features;
-	uint32_t mode_base;
+	uint32_t features;
+	uint32_t mode;
 	uint16_t ch;
+	bool started;
 };
 
 struct gs_usb_data {
@@ -337,7 +337,7 @@ static int gs_usb_request_bt_const(const struct device *dev, uint16_t ch, struct
 	min = can_get_timing_min(channel->dev);
 	max = can_get_timing_max(channel->dev);
 
-	bt_const.feature = sys_cpu_to_le32(channel->supported_features);
+	bt_const.feature = sys_cpu_to_le32(channel->features);
 	bt_const.fclk_can = sys_cpu_to_le32(rate);
 	bt_const.tseg1_min = sys_cpu_to_le32(min->prop_seg + min->phase_seg1);
 	bt_const.tseg1_max = sys_cpu_to_le32(max->prop_seg + max->phase_seg1);
@@ -380,7 +380,7 @@ static int gs_usb_request_bt_const_ext(const struct device *dev, uint16_t ch,
 	min = can_get_timing_min(channel->dev);
 	max = can_get_timing_max(channel->dev);
 
-	bt_const_ext.feature = sys_cpu_to_le32(channel->supported_features);
+	bt_const_ext.feature = sys_cpu_to_le32(channel->features);
 	bt_const_ext.fclk_can = sys_cpu_to_le32(rate);
 
 	bt_const_ext.tseg1_min = sys_cpu_to_le32(min->prop_seg + min->phase_seg1);
@@ -605,6 +605,11 @@ static int gs_usb_request_bittiming(const struct device *dev, uint16_t ch,
 		return -EINVAL;
 	}
 
+	if (channel->started) {
+		LOG_WRN("cannot change timing for already started channel %u", ch);
+		return -EBUSY;
+	}
+
 	dbt.prop_seg = sys_le32_to_cpu(dbtp->prop_seg);
 	dbt.phase_seg1 = sys_le32_to_cpu(dbtp->phase_seg1);
 	dbt.phase_seg2 = sys_le32_to_cpu(dbtp->phase_seg2);
@@ -647,6 +652,11 @@ static int gs_usb_request_data_bittiming(const struct device *dev, uint16_t ch,
 	if (buf->len != sizeof(*dbtp)) {
 		LOG_ERR("invalid length for data_bittiming request (%d)", buf->len);
 		return -EINVAL;
+	}
+
+	if (channel->started) {
+		LOG_WRN("cannot change data phase timing for already started channel %u", ch);
+		return -EBUSY;
 	}
 
 	dbt.prop_seg = sys_le32_to_cpu(dbtp->prop_seg);
@@ -698,19 +708,24 @@ static int gs_usb_request_mode(const struct device *dev, uint16_t ch,
 
 	switch (sys_le32_to_cpu(dm->mode)) {
 	case GS_USB_CHANNEL_MODE_RESET:
-		/* TODO: error handling: flush TX FIFO, unref net_bufs */
 		err = can_stop(channel->dev);
 		if (err != 0U && err != -EALREADY) {
 			LOG_ERR("failed to stop channel %u (err %d)", ch, err);
 			return err;
 		}
-		channel->enabled_features = 0U;
+
+		channel->mode = GS_USB_CAN_MODE_NORMAL;
+		channel->started = false;
 		break;
 	case GS_USB_CHANNEL_MODE_START:
-		flags = sys_le32_to_cpu(dm->flags);
-		mode |= channel->mode_base;
+		if (channel->started) {
+			LOG_WRN("channel %u already started", ch);
+			return -EALREADY;
+		}
 
-		if ((flags & ~(channel->supported_features)) != 0U) {
+		flags = sys_le32_to_cpu(dm->flags);
+
+		if ((flags & ~(channel->features)) != 0U) {
 			LOG_ERR("unsupported flags 0x%08x for channel %u", flags, ch);
 			return -ENOTSUP;
 		}
@@ -751,7 +766,8 @@ static int gs_usb_request_mode(const struct device *dev, uint16_t ch,
 			return err;
 		}
 
-		channel->enabled_features = flags;
+		channel->mode = flags;
+		channel->started = true;
 		break;
 	default:
 		LOG_ERR("unsupported mode %d requested for channel %u channel",
@@ -1055,11 +1071,6 @@ static int gs_usb_out_start(struct usbd_class_data *const c_data)
 		return -EPERM;
 	}
 
-	/* TODO */
-	/* if (atomic_test_and_set_bit(&data->state, GS_USB_STATE_RX_ENGAGED)) { */
-	/* 	return -EBUSY; */
-	/* } */
-
 	ep = gs_usb_get_bulk_out_ep_addr(c_data);
 	buf = gs_usb_buf_alloc(data, ep);
 	if (buf == NULL) {
@@ -1102,7 +1113,7 @@ static void gs_usb_can_rx_callback(const struct device *can_dev, struct can_fram
 	uint32_t timestamp = 0U;
 	int err;
 
-	if ((channel->enabled_features & GS_USB_CAN_MODE_HW_TIMESTAMP) != 0U) {
+	if ((channel->mode & GS_USB_CAN_MODE_HW_TIMESTAMP) != 0U) {
 		err = data->ops.timestamp(data->dev, &timestamp, data->user_data);
 		if (err != 0) {
 			LOG_ERR("failed to get RX timestamp (err %d)", err);
@@ -1154,7 +1165,7 @@ static void gs_usb_can_rx_callback(const struct device *can_dev, struct can_fram
 	}
 
 #ifdef CONFIG_USBD_GS_USB_TIMESTAMP
-	if ((channel->enabled_features & GS_USB_CAN_MODE_HW_TIMESTAMP) != 0U) {
+	if ((channel->mode & GS_USB_CAN_MODE_HW_TIMESTAMP) != 0U) {
 		net_buf_add_le32(buf, timestamp);
 	}
 #endif /* CONFIG_USBD_GS_USB_TIMESTAMP */
@@ -1206,7 +1217,7 @@ static void gs_usb_can_tx_callback(const struct device *can_dev, int error, void
 	uint32_t timestamp = 0U;
 	int err;
 
-	if ((channel->enabled_features & GS_USB_CAN_MODE_HW_TIMESTAMP) != 0U) {
+	if ((channel->mode & GS_USB_CAN_MODE_HW_TIMESTAMP) != 0U) {
 		err = data->ops.timestamp(data->dev, &timestamp, data->user_data);
 		if (err != 0) {
 			LOG_ERR("failed to get TX timestamp (err %d)", err);
@@ -1226,7 +1237,7 @@ static void gs_usb_can_tx_callback(const struct device *can_dev, int error, void
 	memset(tail, 0, padding);
 
 #ifdef CONFIG_USBD_GS_USB_TIMESTAMP
-	if ((channel->enabled_features & GS_USB_CAN_MODE_HW_TIMESTAMP) != 0U) {
+	if ((channel->mode & GS_USB_CAN_MODE_HW_TIMESTAMP) != 0U) {
 		net_buf_add_le32(buf, timestamp);
 	}
 #endif /* CONFIG_USBD_GS_USB_TIMESTAMP */
@@ -1274,8 +1285,13 @@ static void gs_usb_tx_thread(void *p1, void *p2, void *p3)
 		}
 
 		channel = &data->channels[hdr->channel];
-		can_id = sys_le32_to_cpu(hdr->can_id);
+		if (!channel->started) {
+			LOG_ERR("channel %u not started, ignoring TX host frame", hdr->channel);
+			net_buf_unref(buf);
+			continue;
+		}
 
+		can_id = sys_le32_to_cpu(hdr->can_id);
 		if ((can_id & GS_USB_CAN_ID_FLAG_IDE) != 0U) {
 			frame.flags |= CAN_FRAME_IDE;
 			frame.id = can_id & CAN_EXT_ID_MASK;
@@ -1308,8 +1324,6 @@ static void gs_usb_tx_thread(void *p1, void *p2, void *p3)
 			memcpy(&frame.data, buf->data, can_dlc_to_bytes(frame.dlc));
 		}
 
-		/* TODO: error handling: check CAN dev status first? */
-
 		ep = gs_usb_get_bulk_in_ep_addr(data->c_data);
 		gs_usb_fill_echo_frame_hdr(buf, sys_le32_to_cpu(hdr->echo_id), hdr->channel,
 					   hdr->flags, ep);
@@ -1336,6 +1350,12 @@ static int gs_usb_request(struct usbd_class_data *const c_data, struct net_buf *
 	LOG_INF("request complete for ep 0x%02x (err %d)", bi->ep, err);
 
 	if (bi->ep == gs_usb_get_bulk_out_ep_addr(c_data)) {
+		if (!atomic_test_bit(&data->state, GS_USB_STATE_CLASS_ENABLED)) {
+			LOG_WRN("class not enabled");
+			net_buf_unref(buf);
+			return 0;
+		}
+
 		net_buf_put(&data->tx_fifo, buf);
 
 		ret = gs_usb_out_start(c_data);
@@ -1373,10 +1393,31 @@ static void gs_usb_disable(struct usbd_class_data *const c_data)
 {
 	const struct device *dev = usbd_class_get_private(c_data);
 	struct gs_usb_data *data = dev->data;
+	struct usbd_context *uds_ctx = usbd_class_get_ctx(c_data);
+	/* uint8_t ep; */
+	int err;
 
 	atomic_clear_bit(&data->state, GS_USB_STATE_CLASS_ENABLED);
 
-	/* TODO: error handling: abort transfers? unref enqueued ep OUT net_buf? reset in_sem? */
+	/* TODO: stop all channels */
+
+	/* ep = gs_usb_get_bulk_in_ep_addr(c_data); */
+	/* err = usbd_ep_dequeue(uds_ctx, ep); */
+	/* if (err != 0) { */
+	/* 	LOG_ERR("failed to dequeue IN ep 0x%02x (err %d)", ep, err); */
+	/* } */
+
+	/* TODO: needed? */
+	/* k_sem_reset(&data->in_sem); */
+
+	/* TODO: error handling: empty fifos? */
+	/* TODO: unref queued net_buf? */
+
+	/* ep = gs_usb_get_bulk_out_ep_addr(c_data); */
+	/* err = usbd_ep_dequeue(uds_ctx, ep); */
+	/* if (err != 0) { */
+	/* 	LOG_ERR("failed to dequeue OUT ep 0x%02x (err %d)", ep, err); */
+	/* } */
 
 	LOG_INF("disabled");
 }
@@ -1472,17 +1513,10 @@ static int gs_usb_register_channel(struct gs_usb_channel_data *channel, uint16_t
 
 	channel->ch = ch;
 	channel->dev = can_dev;
-	channel->supported_features = common_features;
-	channel->supported_features |= gs_usb_features_from_capabilities(caps);
-	channel->mode_base = CAN_MODE_NORMAL;
+	channel->features = common_features;
+	channel->features |= gs_usb_features_from_capabilities(caps);
 
-	if ((caps & CAN_MODE_MANUAL_RECOVERY) != 0U) {
-		channel->mode_base |= CAN_MODE_MANUAL_RECOVERY;
-	} else {
-		LOG_WRN("channel %d does not support manual recovery mode", ch);
-	}
-
-	LOG_DBG("channel %d features = 0x%08x", ch, channel->supported_features);
+	LOG_DBG("channel %d features = 0x%08x", ch, channel->features);
 
 	return 0;
 }
