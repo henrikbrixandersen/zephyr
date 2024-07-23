@@ -181,22 +181,30 @@ usbd_class_get_by_req(struct usbd_context *const uds_ctx,
 	struct usbd_config_node *cfg_nd;
 	struct usbd_class_node *c_nd;
 
+	LOG_ERR("usbd_class_get_by_req(): request=0x%02x", request);
+
 	cfg_nd = usbd_config_get_current(uds_ctx);
 	if (cfg_nd == NULL) {
+		LOG_ERR("cfg_nd is NULL");
 		return NULL;
 	}
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&cfg_nd->class_list, c_nd, node) {
+		LOG_ERR("checking class node %p", c_nd);
+
 		if (c_nd->c_data->v_reqs == NULL) {
 			continue;
 		}
 
 		for (int i = 0; i < c_nd->c_data->v_reqs->len; i++) {
+			LOG_ERR("class node %p v_req[%d] = 0x%02x", c_nd, i, c_nd->c_data->v_reqs->reqs[i]);
+
 			/*
 			 * First instance always wins.
 			 * There is no other way to determine the recipient.
 			 */
 			if (c_nd->c_data->v_reqs->reqs[i] == request) {
+				LOG_ERR("class node %p matches request", c_nd);
 				return c_nd;
 			}
 		}
@@ -241,6 +249,7 @@ static int usbd_class_append(struct usbd_context *const uds_ctx,
 		return -ENODATA;
 	}
 
+	LOG_ERR("appending class node %p", c_nd);
 	sys_slist_append(&cfg_nd->class_list, &c_nd->node);
 
 	return 0;
@@ -328,6 +337,7 @@ int usbd_register_class(struct usbd_context *const uds_ctx,
 		goto register_class_error;
 	}
 
+	LOG_ERR("registering class node %p", c_nd);
 	ret = usbd_class_append(uds_ctx, c_nd, speed, cfg);
 	if (ret == 0) {
 		/* Initialize pointer back to the device struct */

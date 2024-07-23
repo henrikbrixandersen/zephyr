@@ -48,9 +48,11 @@ struct usbd_config_node *
 usbd_config_get_current(struct usbd_context *const uds_ctx)
 {
 	if (!usbd_state_is_configured(uds_ctx)) {
-		LOG_INF("No configuration set (Address state?)");
+		LOG_ERR("No configuration set (Address state?)");
 		return NULL;
 	}
+
+	LOG_ERR("here");
 
 	return usbd_config_get(uds_ctx, usbd_bus_speed(uds_ctx),
 			       usbd_get_config_value(uds_ctx));
