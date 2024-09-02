@@ -35,7 +35,7 @@
 			clocks = <&gclk 27>, <&mclk 0x10 17>;
 			clock-names = "GCLK", "MCLK";
 			bosch,mram-cfg = <0x0 128 64 64 64 64 32 32>;
-			divider = <12>;
+			divider = <1>;
 			status = "disabled";
 		};
 
@@ -47,7 +47,7 @@
 			clocks = <&gclk 28>, <&mclk 0x10 18>;
 			clock-names = "GCLK", "MCLK";
 			bosch,mram-cfg = <0x0 128 64 64 64 64 32 32>;
-			divider = <12>;
+			divider = <1>;
 			status = "disabled";
 		};
 	};
