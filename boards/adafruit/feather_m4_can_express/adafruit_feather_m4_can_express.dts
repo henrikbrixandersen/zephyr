@@ -1,0 +1,95 @@
+/*
+ * Copyright (c) 2024-2025 Henrik Brix Andersen <henrik@brixandersen.dk>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <atmel/same5xx19.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include "adafruit_feather_m4_can_express-pinctrl.dtsi"
+#include "feather_connector.dtsi"
+
+/ {
+	model = "Adafruit Feather M4 CAN Express";
+	compatible = "adafruit,feather-m4-can-express", "atmel,same51j19a", "atmel,same51";
+
+	chosen {
+		zephyr,console = &sercom5;
+		zephyr,shell-uart = &sercom5;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &code_partition;
+		zephyr,canbus = &can1;
+	};
+
+	aliases {
+		led0 = &led0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0: led0 {
+			gpios = <&porta 23 GPIO_ACTIVE_HIGH>;
+			label = "Red LED";
+		};
+	};
+
+	can_phy1: can-phy1 {
+		compatible = "ti,tcan1051", "can-transceiver-gpio";
+		enable-gpios = <&portb 12 GPIO_ACTIVE_LOW>;
+		max-bitrate = <5000000>;
+		#phy-cells = <0>;
+	};
+};
+
+&cpu0 {
+	clock-frequency = <120000000>;
+};
+
+&sercom5 {
+	status = "okay";
+	compatible = "atmel,sam0-uart";
+	current-speed = <115200>;
+	rxpo = <1>;
+	txpo = <0>;
+
+	pinctrl-0 = <&sercom5_uart_default>;
+	pinctrl-names = "default";
+};
+
+&can1 {
+	status = "okay";
+	phys = <&can_phy1>;
+
+	pinctrl-0 = <&can1_default>;
+	pinctrl-names = "default";
+};
+
+zephyr_udc0: &usb0 {
+	status = "okay";
+
+	pinctrl-0 = <&usb_dc_default>;
+	pinctrl-names = "default";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "uf2";
+			reg = <0x00000000 DT_SIZE_K(16)>;
+			read-only;
+		};
+
+		code_partition: partition@4000 {
+			label = "code";
+			reg = <0x4000 DT_SIZE_K(512-16)>;
+			read-only;
+		};
+	};
+};

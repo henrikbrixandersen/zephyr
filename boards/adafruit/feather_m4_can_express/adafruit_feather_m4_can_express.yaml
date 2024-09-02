@@ -1,0 +1,13 @@
+identifier: adafruit_feather_m4_can_express
+name: Adafruit Feather M4 CAN Express
+vendor: adafruit
+type: mcu
+arch: arm
+ram: 192
+flash: 512
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - can
+  - usb_device
