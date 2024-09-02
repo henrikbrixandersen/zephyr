@@ -1,0 +1,30 @@
+/*
+ * Copyright (c) 2024-2025 Henrik Brix Andersen <henrik@brixandersen.dk>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/pinctrl/same51j-pinctrl.h>
+
+&pinctrl {
+	sercom5_uart_default: sercom5_uart_default {
+		group1 {
+			pinmux = <PB16C_SERCOM5_PAD0>,
+				 <PB17C_SERCOM5_PAD1>;
+		};
+	};
+
+	can1_default: can1_default {
+		group1 {
+			pinmux = <PB15H_CAN1_RX>,
+				 <PB14H_CAN1_TX>;
+		};
+	};
+
+	usb_dc_default: usb_dc_default {
+		group1 {
+			pinmux = <PA25H_USB_DP>,
+				 <PA24H_USB_DM>;
+		};
+	};
+};

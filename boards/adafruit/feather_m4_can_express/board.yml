@@ -1,0 +1,5 @@
+board:
+  name: adafruit_feather_m4_can_express
+  vendor: adafruit
+  socs:
+    - name: same51j19a
