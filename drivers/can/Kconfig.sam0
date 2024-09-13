@@ -8,3 +8,14 @@ config CAN_SAM0
 	depends on DT_HAS_ATMEL_SAM0_CAN_ENABLED
 	select CAN_MCAN
 	select PINCTRL
+
+config CAN_SAM0_MRAM_LOCATION
+	hex "CAN message RAM byte offset to SRAM_BASE_ADDRESS"
+	default 0x5000
+	depends on SOC_SERIES_SAME51 || SOC_SERIES_SAME54
+	help
+	  This option specifies the CAN message RAM start address relative to the system RAM base
+	  address.
+
+	  On SAME51/SAME54, the CAN message RAM must be placed within the first 64 KB of the system
+	  RAM.
