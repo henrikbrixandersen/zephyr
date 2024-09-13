@@ -211,9 +211,17 @@ static void config_can_##inst##_irq(void)						\
 #define ASSIGNED_CLOCKS_CELL_BY_NAME							\
 	ATMEL_SAM0_DT_INST_ASSIGNED_CLOCKS_CELL_BY_NAME
 
+#if defined(CONFIG_SOC_SERIES_SAME51) || defined(CONFIG_SOC_SERIES_SAME54)
+#define CAN_SAM0_DT_INST_MRAM_DEFINE(inst, _name)                                       \
+	CAN_MCAN_DT_INST_MRAM_DEFINE_SECTION(inst, _name, ".can_message_ram")
+
+#else /* defined(CONFIG_SOC_SERIES_SAME51) || defined(CONFIG_SOC_SERIES_SAME54) */
+#define CAN_SAM0_DT_INST_MRAM_DEFINE(inst, _name) CAN_MCAN_DT_INST_MRAM_DEFINE(inst, _name)
+#endif /* !defined(CONFIG_SOC_SERIES_SAME51) || defined(CONFIG_SOC_SERIES_SAME54) */
+
 #define CAN_SAM0_CFG_INST(inst)								\
 	CAN_MCAN_DT_INST_CALLBACKS_DEFINE(inst, can_sam0_cbs_##inst);			\
-	CAN_MCAN_DT_INST_MRAM_DEFINE(inst, can_sam0_mram_##inst);			\
+	CAN_SAM0_DT_INST_MRAM_DEFINE(inst, can_sam0_mram_##inst);			\
 											\
 	static const struct can_sam0_config can_sam0_cfg_##inst = {			\
 		.base = CAN_MCAN_DT_INST_MCAN_ADDR(inst),				\
