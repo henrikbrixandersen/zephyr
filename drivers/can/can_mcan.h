@@ -855,12 +855,21 @@ enum can_mcan_psr_lec {
 #define CAN_MCAN_DT_INST_MRAM_ELEMENTS_SIZE(inst) CAN_MCAN_DT_MRAM_ELEMENTS_SIZE(DT_DRV_INST(inst))
 
 /**
- * @brief Equivalent to CAN_MCAN_DT_MRAM_DEFINE(DT_DRV_INST(inst))
+ * @brief Equivalent to CAN_MCAN_DT_MRAM_DEFINE(DT_DRV_INST(inst), _name)
  * @param inst DT_DRV_COMPAT instance number
  * @param _name buffer variable name
  * @see CAN_MCAN_DT_MRAM_DEFINE()
  */
 #define CAN_MCAN_DT_INST_MRAM_DEFINE(inst, _name) CAN_MCAN_DT_MRAM_DEFINE(DT_DRV_INST(inst), _name)
+
+/**
+ * @brief Equivalent to CAN_MCAN_DT_MRAM_DEFINE_SECTION(DT_DRV_INST(inst), _name, _section_name)
+ * @param inst DT_DRV_COMPAT instance number
+ * @param _name buffer variable name
+ * @param _section_name Name of the linker section to place the buffer in
+ */
+#define CAN_MCAN_DT_INST_MRAM_DEFINE_SECTION(inst, _name, _section_name)                           \
+	CAN_MCAN_DT_MRAM_DEFINE_SECTION(DT_DRV_INST(inst), _name, _section_name)
 
 /**
  * @brief Equivalent to CAN_MCAN_DT_MRAM_DEFINE_SECTION(DT_DRV_INST(inst), _name, _section_name)
