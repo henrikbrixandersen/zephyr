@@ -1,0 +1,16 @@
+identifier: usb2canfd
+name: WeAct USB2CANFD V1
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 144
+flash: 128
+supported:
+  - can
+  - gpio
+  - usb_device
+  - usbd
+vendor: weact
