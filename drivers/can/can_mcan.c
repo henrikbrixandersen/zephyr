@@ -688,7 +688,8 @@ static void can_mcan_get_message(const struct device *dev, uint16_t fifo_offset,
 	void *user_data;
 	uint32_t get_idx;
 	uint32_t filt_idx;
-	int data_length;
+	size_t data_length;
+	size_t mram_data_length;
 	uint32_t fifo_status;
 	int err;
 
@@ -742,12 +743,22 @@ static void can_mcan_get_message(const struct device *dev, uint16_t fifo_offset,
 
 		data_length = can_dlc_to_bytes(frame.dlc);
 		if (data_length <= sizeof(frame.data)) {
+			if (false) {
+				/* TODO: use quirks */
+				mram_data_length = SIZEOF_FIELD(struct can_mcan_rx_fifo, data_32);
+
+				if ((frame.flags & CAN_FRAME_FDF) == 0U) {
+					mram_data_length /= 8U;
+				}
+			} else {
+				mram_data_length = ROUND_UP(data_length, sizeof(uint32_t));
+			}
+
 			if ((frame.flags & CAN_FRAME_RTR) == 0U && data_length != 0U) {
 				err = can_mcan_read_mram(dev, fifo_offset + get_idx *
 							 sizeof(struct can_mcan_rx_fifo) +
 							 offsetof(struct can_mcan_rx_fifo, data_32),
-							 &frame.data_32,
-							 ROUND_UP(data_length, sizeof(uint32_t)));
+							 &frame.data_32, mram_data_length);
 				if (err != 0) {
 					LOG_ERR("failed to read Rx FIFO data (err %d)", err);
 					return;
@@ -907,6 +918,7 @@ int can_mcan_send(const struct device *dev, const struct can_frame *frame, k_tim
 	const struct can_mcan_callbacks *cbs = config->callbacks;
 	struct can_mcan_data *data = dev->data;
 	size_t data_length = can_dlc_to_bytes(frame->dlc);
+	size_t mram_data_length;
 	struct can_mcan_tx_buffer_hdr tx_hdr = {
 		.rtr = (frame->flags & CAN_FRAME_RTR) != 0U ? 1U : 0U,
 		.xtd = (frame->flags & CAN_FRAME_IDE) != 0U ? 1U : 0U,
@@ -1013,11 +1025,22 @@ int can_mcan_send(const struct device *dev, const struct can_frame *frame, k_tim
 		goto err_unlock;
 	}
 
+	if (true) {
+		/* TODO: use quirks */
+		mram_data_length = SIZEOF_FIELD(struct can_mcan_tx_buffer, data_32);
+
+		if ((frame->flags & CAN_FRAME_FDF) == 0U) {
+			mram_data_length /= 8U;
+		}
+	} else {
+		mram_data_length = ROUND_UP(data_length, sizeof(uint32_t));
+	}
+
 	if ((frame->flags & CAN_FRAME_RTR) == 0U && data_length != 0U) {
 		err = can_mcan_write_mram(dev, config->mram_offsets[CAN_MCAN_MRAM_CFG_TX_BUFFER] +
 					put_idx * sizeof(struct can_mcan_tx_buffer) +
 					offsetof(struct can_mcan_tx_buffer, data_32),
-					&frame->data_32, ROUND_UP(data_length, sizeof(uint32_t)));
+					&frame->data_32, mram_data_length);
 		if (err != 0) {
 			LOG_ERR("failed to write Tx Buffer data (err %d)", err);
 			goto err_unlock;
@@ -1291,6 +1314,7 @@ int can_mcan_configure_mram(const struct device *dev, uintptr_t mrba, uintptr_t 
 
 	can_mcan_enable_configuration_change(dev);
 
+	LOG_INF("SIDFC = 0x%04x", config->mram_offsets[CAN_MCAN_MRAM_CFG_STD_FILTER]);
 	addr = mram - mrba + config->mram_offsets[CAN_MCAN_MRAM_CFG_STD_FILTER];
 	reg = (addr & CAN_MCAN_SIDFC_FLSSA) | FIELD_PREP(CAN_MCAN_SIDFC_LSS,
 		config->mram_elements[CAN_MCAN_MRAM_CFG_STD_FILTER]);
@@ -1299,6 +1323,7 @@ int can_mcan_configure_mram(const struct device *dev, uintptr_t mrba, uintptr_t 
 		return err;
 	}
 
+	LOG_INF("XIDFC = 0x%04x", config->mram_offsets[CAN_MCAN_MRAM_CFG_EXT_FILTER]);
 	addr = mram - mrba + config->mram_offsets[CAN_MCAN_MRAM_CFG_EXT_FILTER];
 	reg = (addr & CAN_MCAN_XIDFC_FLESA) | FIELD_PREP(CAN_MCAN_XIDFC_LSS,
 		config->mram_elements[CAN_MCAN_MRAM_CFG_EXT_FILTER]);
@@ -1307,6 +1332,7 @@ int can_mcan_configure_mram(const struct device *dev, uintptr_t mrba, uintptr_t 
 		return err;
 	}
 
+	LOG_INF("RXF0C = 0x%04x", config->mram_offsets[CAN_MCAN_MRAM_CFG_RX_FIFO0]);
 	addr = mram - mrba + config->mram_offsets[CAN_MCAN_MRAM_CFG_RX_FIFO0];
 	reg = (addr & CAN_MCAN_RXF0C_F0SA) | FIELD_PREP(CAN_MCAN_RXF0C_F0S,
 		config->mram_elements[CAN_MCAN_MRAM_CFG_RX_FIFO0]);
@@ -1315,6 +1341,7 @@ int can_mcan_configure_mram(const struct device *dev, uintptr_t mrba, uintptr_t 
 		return err;
 	}
 
+	LOG_INF("RXF1C = 0x%04x", config->mram_offsets[CAN_MCAN_MRAM_CFG_RX_FIFO1]);
 	addr = mram - mrba + config->mram_offsets[CAN_MCAN_MRAM_CFG_RX_FIFO1];
 	reg = (addr & CAN_MCAN_RXF1C_F1SA) | FIELD_PREP(CAN_MCAN_RXF1C_F1S,
 		config->mram_elements[CAN_MCAN_MRAM_CFG_RX_FIFO1]);
@@ -1323,6 +1350,7 @@ int can_mcan_configure_mram(const struct device *dev, uintptr_t mrba, uintptr_t 
 		return err;
 	}
 
+	LOG_INF("RXBC = 0x%04x", config->mram_offsets[CAN_MCAN_MRAM_CFG_RX_BUFFER]);
 	addr = mram - mrba + config->mram_offsets[CAN_MCAN_MRAM_CFG_RX_BUFFER];
 	reg = (addr & CAN_MCAN_RXBC_RBSA);
 	err = can_mcan_write_reg(dev, CAN_MCAN_RXBC, reg);
@@ -1330,6 +1358,7 @@ int can_mcan_configure_mram(const struct device *dev, uintptr_t mrba, uintptr_t 
 		return err;
 	}
 
+	LOG_INF("TXEFC = 0x%04x", config->mram_offsets[CAN_MCAN_MRAM_CFG_TX_EVENT_FIFO]);
 	addr = mram - mrba + config->mram_offsets[CAN_MCAN_MRAM_CFG_TX_EVENT_FIFO];
 	reg = (addr & CAN_MCAN_TXEFC_EFSA) | FIELD_PREP(CAN_MCAN_TXEFC_EFS,
 		config->mram_elements[CAN_MCAN_MRAM_CFG_TX_EVENT_FIFO]);
@@ -1338,6 +1367,7 @@ int can_mcan_configure_mram(const struct device *dev, uintptr_t mrba, uintptr_t 
 		return err;
 	}
 
+	LOG_INF("TXBC = 0x%04x", config->mram_offsets[CAN_MCAN_MRAM_CFG_TX_BUFFER]);
 	addr = mram - mrba + config->mram_offsets[CAN_MCAN_MRAM_CFG_TX_BUFFER];
 	reg = (addr & CAN_MCAN_TXBC_TBSA) | FIELD_PREP(CAN_MCAN_TXBC_TFQS,
 		config->mram_elements[CAN_MCAN_MRAM_CFG_TX_BUFFER]) | CAN_MCAN_TXBC_TFQM;
