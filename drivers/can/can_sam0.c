@@ -69,6 +69,8 @@ static int can_sam0_read_mram(const struct device *dev, uint16_t offset, void *d
 	const struct can_mcan_config *mcan_config = dev->config;
 	const struct can_sam0_config *sam_config = mcan_config->custom;
 
+	LOG_INF("reading MRAM offset 0x%04x, len = %d", offset, len);
+
 	return can_mcan_sys_read_mram(sam_config->mram, offset, dst, len);
 }
 
@@ -77,6 +79,8 @@ static int can_sam0_write_mram(const struct device *dev, uint16_t offset, const 
 {
 	const struct can_mcan_config *mcan_config = dev->config;
 	const struct can_sam0_config *sam_config = mcan_config->custom;
+
+	LOG_INF("writing MRAM offset 0x%04x, len = %d", offset, len);
 
 	return can_mcan_sys_write_mram(sam_config->mram, offset, src, len);
 }
