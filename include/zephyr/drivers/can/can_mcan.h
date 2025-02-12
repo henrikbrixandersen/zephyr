@@ -1263,6 +1263,7 @@ struct can_mcan_config {
 	uint16_t mram_elements[CAN_MCAN_MRAM_CFG_NUM_CELLS];
 	uint16_t mram_offsets[CAN_MCAN_MRAM_CFG_NUM_CELLS];
 	size_t mram_size;
+	uint32_t quirks;
 	const void *custom;
 };
 
@@ -1455,6 +1456,8 @@ static inline int can_mcan_sys_write_mram(mem_addr_t base, uint16_t offset, cons
 	__ASSERT(offset % 4U == 0U, "offset must be a multiple of 4");
 	__ASSERT(POINTER_TO_UINT(src) % 4U == 0U, "src must be 32-bit aligned");
 	__ASSERT(len % 4U == 0U, "len must be a multiple of 4");
+
+	/* LOG_INF("base = 0x%lu, offset = 0x%04x, len = %d, len32 = %d", base, offset, len, len32); */
 
 	while (len32-- > 0) {
 		*dst32++ = *src32++;
