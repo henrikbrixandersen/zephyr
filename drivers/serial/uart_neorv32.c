@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Henrik Brix Andersen <henrik@brixandersen.dk>
+ * Copyright (c) 2021,2025 Henrik Brix Andersen <henrik@brixandersen.dk>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,30 +19,30 @@
 LOG_MODULE_REGISTER(uart_neorv32, CONFIG_UART_LOG_LEVEL);
 
 /* NEORV32 UART registers offsets */
-#define NEORV32_UART_CTRL_OFFSET 0x00
-#define NEORV32_UART_DATA_OFFSET 0x04
+#define NEORV32_UART_CTRL 0x00
+#define NEORV32_UART_DATA 0x04
 
 /* UART_CTRL register bits */
-#define NEORV32_UART_CTRL_EN              BIT(0)
-#define NEORV32_UART_CTRL_SIM_MODE        BIT(1)
-#define NEORV32_UART_CTRL_HWFC_EN         BIT(2)
-#define NEORV32_UART_CTRL_PRSC_POS        3U
-#define NEORV32_UART_CTRL_PRSC_MASK       BIT_MASK(3)
-#define NEORV32_UART_CTRL_BAUD_POS        6U
-#define NEORV32_UART_CTRL_BAUD_MASK       BIT_MASK(10)
-#define NEORV32_UART_CTRL_RX_NEMPTY       BIT(16)
-#define NEORV32_UART_CTRL_RX_HALF         BIT(17)
-#define NEORV32_UART_CTRL_RX_FULL         BIT(18)
-#define NEORV32_UART_CTRL_TX_NEMPTY       BIT(19)
-#define NEORV32_UART_CTRL_TX_HALF         BIT(20)
-#define NEORV32_UART_CTRL_TX_FULL         BIT(21)
-#define NEORV32_UART_CTRL_IRQ_RX_NEMPTY   BIT(22)
-#define NEORV32_UART_CTRL_IRQ_RX_HALF     BIT(23)
-#define NEORV32_UART_CTRL_IRQ_RX_FULL     BIT(24)
-#define NEORV32_UART_CTRL_IRQ_TX_EMPTY    BIT(25)
-#define NEORV32_UART_CTRL_IRQ_TX_NHALF    BIT(26)
-#define NEORV32_UART_CTRL_RX_OVER         BIT(30)
-#define NEORV32_UART_CTRL_TX_BUSY         BIT(31)
+#define NEORV32_UART_CTRL_EN               BIT(0)
+#define NEORV32_UART_CTRL_SIM_MODE         BIT(1)
+#define NEORV32_UART_CTRL_HWFC_EN          BIT(2)
+#define NEORV32_UART_CTRL_PRSC             GENMASK(5, 3)
+#define NEORV32_UART_CTRL_BAUD             GENMASK(15, 6)
+#define NEORV32_UART_CTRL_RX_NEMPTY        BIT(16)
+#define NEORV32_UART_CTRL_RX_HALF          BIT(17)
+#define NEORV32_UART_CTRL_RX_FULL          BIT(18)
+#define NEORV32_UART_CTRL_TX_EMPTY         BIT(19)
+#define NEORV32_UART_CTRL_TX_NHALF         BIT(20)
+#define NEORV32_UART_CTRL_TX_FULL          BIT(21)
+#define NEORV32_UART_CTRL_IRQ_RX_NEMPTY    BIT(22)
+#define NEORV32_UART_CTRL_IRQ_RX_HALF      BIT(23)
+#define NEORV32_UART_CTRL_IRQ_RX_FULL      BIT(24)
+#define NEORV32_UART_CTRL_IRQ_TX_EMPTY     BIT(25)
+#define NEORV32_UART_CTRL_IRQ_TX_NHALF     BIT(26)
+#define NEORV32_UART_CTRL_UART_CTRL_RX_CLR BIT(28)
+#define NEORV32_UART_CTRL_UART_CTRL_TX_CLR BIT(29)
+#define NEORV32_UART_CTRL_RX_OVER          BIT(30)
+#define NEORV32_UART_CTRL_TX_BUSY          BIT(31)
 
 struct neorv32_uart_config {
 	const struct device *syscon;
@@ -69,14 +69,14 @@ static inline uint32_t neorv32_uart_read_ctrl(const struct device *dev)
 {
 	const struct neorv32_uart_config *config = dev->config;
 
-	return sys_read32(config->base + NEORV32_UART_CTRL_OFFSET);
+	return sys_read32(config->base + NEORV32_UART_CTRL);
 }
 
 static inline void neorv32_uart_write_ctrl(const struct device *dev, uint32_t ctrl)
 {
 	const struct neorv32_uart_config *config = dev->config;
 
-	sys_write32(ctrl, config->base + NEORV32_UART_CTRL_OFFSET);
+	sys_write32(ctrl, config->base + NEORV32_UART_CTRL);
 }
 
 static inline uint32_t neorv32_uart_read_data(const struct device *dev)
@@ -86,7 +86,7 @@ static inline uint32_t neorv32_uart_read_data(const struct device *dev)
 	uint32_t reg;
 
 	/* Cache status bits as they are cleared upon read */
-	reg = sys_read32(config->base + NEORV32_UART_DATA_OFFSET);
+	reg = sys_read32(config->base + NEORV32_UART_DATA);
 	data->last_data = reg;
 
 	return reg;
@@ -96,7 +96,7 @@ static inline void neorv32_uart_write_data(const struct device *dev, uint32_t da
 {
 	const struct neorv32_uart_config *config = dev->config;
 
-	sys_write32(data, config->base + NEORV32_UART_DATA_OFFSET);
+	sys_write32(data, config->base + NEORV32_UART_DATA);
 }
 
 static int neorv32_uart_poll_in(const struct device *dev, unsigned char *c)
@@ -123,6 +123,8 @@ static void neorv32_uart_poll_out(const struct device *dev, unsigned char c)
 
 static int neorv32_uart_configure(const struct device *dev, const struct uart_config *cfg)
 {
+	const uint16_t baudxx_max = FIELD_GET(NEORV32_UART_CTRL_BAUD, NEORV32_UART_CTRL_BAUD);
+	const uint8_t prscx_max = FIELD_GET(NEORV32_UART_CTRL_PRSC, NEORV32_UART_CTRL_PRSC);
 	const struct neorv32_uart_config *config = dev->config;
 	struct neorv32_uart_data *data = dev->data;
 	uint32_t ctrl = NEORV32_UART_CTRL_EN;
@@ -179,7 +181,7 @@ static int neorv32_uart_configure(const struct device *dev, const struct uart_co
 	 * clock / 2.
 	 */
 	baudxx = clk / (2 * cfg->baudrate);
-	while (baudxx >= NEORV32_UART_CTRL_BAUD_MASK) {
+	while (baudxx >= baudxx_max) {
 		if ((prscx == 2) || (prscx == 4)) {
 			baudxx >>= 3;
 		} else {
@@ -189,13 +191,13 @@ static int neorv32_uart_configure(const struct device *dev, const struct uart_co
 		prscx++;
 	}
 
-	if (prscx > NEORV32_UART_CTRL_PRSC_MASK) {
+	if (prscx > prscx_max) {
 		LOG_ERR("unsupported baud rate %d", cfg->baudrate);
 		return -ENOTSUP;
 	}
 
-	ctrl |= (baudxx - 1) << NEORV32_UART_CTRL_BAUD_POS;
-	ctrl |= prscx << NEORV32_UART_CTRL_PRSC_POS;
+	ctrl |= FIELD_PREP(NEORV32_UART_CTRL_BAUD, baudxx - 1U) |
+		FIELD_PREP(NEORV32_UART_CTRL_PRSC, prscx);
 
 	data->uart_cfg = *cfg;
 	neorv32_uart_write_ctrl(dev, ctrl);
@@ -395,7 +397,7 @@ static int neorv32_uart_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	err = syscon_read_reg(config->syscon, NEORV32_SYSINFO_FEATURES, &features);
+	err = syscon_read_reg(config->syscon, NEORV32_SYSINFO_SOC, &features);
 	if (err < 0) {
 		LOG_ERR("failed to determine implemented features (err %d)", err);
 		return -EIO;
@@ -502,7 +504,7 @@ static DEVICE_API(uart, neorv32_uart_driver_api) = {
 									\
 	static const struct neorv32_uart_config neorv32_uart_##n##_config = { \
 		.syscon = DEVICE_DT_GET(DT_PHANDLE(node_id, syscon)),	\
-		.feature_mask = NEORV32_SYSINFO_FEATURES_IO_UART##n,	\
+		.feature_mask = NEORV32_SYSINFO_SOC_IO_UART##n,	\
 		.base = DT_REG_ADDR(node_id),				\
 		NEORV32_UART_CONFIG_INIT(node_id, n)			\
 	};								\
