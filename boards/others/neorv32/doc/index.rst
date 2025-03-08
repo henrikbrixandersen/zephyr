@@ -18,6 +18,8 @@ The currently supported version is NEORV32 v1.11.1.
 Supported Features
 ==================
 
+TODO: describe board variants and how to customize them out-of-tree
+
 The ``neorv32`` board target can be used a generic definition for NEORV32
 based boards. Customization to fit custom NEORV32 implementations can be done
 using :ref:`devicetree overlays <use-dt-overlays>`.
@@ -38,6 +40,7 @@ CPU
 The default board configuration assumes the NEORV32 CPU implementation has the
 following RISC-V ISA extensions enabled:
 
+TODO:
 - I (Base Integer Instruction Set, 32-bit)
 - M (Integer Multiplication and Division)
 - Zicsr (Control and Status Register (CSR) Instructions, always enabled)
@@ -46,6 +49,7 @@ following RISC-V ISA extensions enabled:
 Internal Instruction Memory
 ===========================
 
+TODO:
 The default board configuration assumes the NEORV32 SoC implementation has a 64k
 byte internal instruction memory (IMEM) for code execution. The size of the
 instruction memory can be overridden by changing the ``reg`` property of the
@@ -54,6 +58,7 @@ instruction memory can be overridden by changing the ``reg`` property of the
 Internal Data Memory
 ====================
 
+# TODO:
 The default board configuration assumes the NEORV32 SoC implementation has a 64k
 byte internal data memory (DMEM). The size of the data memory can be overridden
 by changing the ``reg`` property of the ``dmem`` devicetree node.
@@ -61,6 +66,7 @@ by changing the ``reg`` property of the ``dmem`` devicetree node.
 Serial Port
 ===========
 
+# TODO:
 The default configuration assumes the NEORV32 SoC implements UART0 for use as
 system console.
 
@@ -112,7 +118,7 @@ implementation with the On-Chip Debugger (OCD) and bootloader enabled.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: neorv32
+   :board: neorv32/neorv32/minimalboot
    :goals: flash
 
 The default board configuration uses an :ref:`openocd-debug-host-tools`
@@ -122,7 +128,7 @@ example for using the Flyswatter JTAG @ 2 kHz:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: neorv32
+   :board: neorv32/neorv32/minimalboot
    :goals: flash
    :flash-args: --config interface/ftdi/flyswatter.cfg --config neorv32.cfg --cmd-pre-init 'adapter speed 2000'
 
@@ -131,7 +137,7 @@ After flashing, you should see message similar to the following in the terminal:
 .. code-block:: console
 
    *** Booting Zephyr OS build zephyr-vn.n.nn  ***
-   Hello World! neorv32/neorv32
+   Hello World! neorv32/neorv32/minimalboot
 
 Note, however, that the application was not persisted in flash memory by the
 above steps. It was merely written to internal block RAM in the FPGA. It will
@@ -150,7 +156,7 @@ can be passed at build time:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: neorv32
+   :board: neorv32/neorv32/minimalboot
    :goals: build
    :gen-args: -DCMAKE_PROGRAM_PATH=<path/to/neorv32/sw/image_gen/>
 
@@ -169,7 +175,7 @@ Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: neorv32
+   :board: neorv32/neorv32/minimalboot
    :goals: debug
 
 Step through the application in your debugger, and you should see a message
@@ -178,7 +184,7 @@ similar to the following in the terminal:
 .. code-block:: console
 
    *** Booting Zephyr OS build zephyr-vn.n.nn  ***
-   Hello World! neorv32/neorv32
+   Hello World! neorv32/neorv32/minimalboot
 
 .. _The NEORV32 RISC-V Processor GitHub:
    https://github.com/stnolting/neorv32
