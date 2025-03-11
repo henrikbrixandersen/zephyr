@@ -1,0 +1,10 @@
+common:
+  build_only: true
+  tags:
+    - drivers
+    - entropy
+tests:
+  drivers.entropy.build_all:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64

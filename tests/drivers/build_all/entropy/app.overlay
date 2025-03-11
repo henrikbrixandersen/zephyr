@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2025 Henrik Brix Andersen <henrik@brixandersen.dk>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	test {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		test_syscon: syscon@0 {
+			compatible = "syscon";
+			status = "okay";
+			reg = <0x1 0x10000>;
+		};
+
+		test_rng_neorv32: rng@1 {
+			compatible = "neorv32,trng";
+			status = "okay";
+			reg = <0x1 0x10000>;
+			syscon = <&test_syscon>;
+		};
+	};
+};
