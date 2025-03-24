@@ -1,0 +1,42 @@
+/*
+ * Copyright (c) 2025 Henrik Brix Andersen <henrik@brixandersen.dk>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <neorv32.dtsi>
+#include <mem.h>
+
+/ {
+	model = "NEORV32 Minimal";
+	compatible = "neorv32";
+
+	chosen {
+		zephyr,flash = &imem;
+		zephyr,sram = &dmem;
+	};
+};
+
+&cpu0 {
+	riscv,isa = "rv32ic_zicsr_zifencei";
+};
+
+&imem {
+	status = "okay";
+	reg = <0x0 DT_SIZE_K(8)>;
+};
+
+&dmem {
+	status = "okay";
+	reg = <0x80000000 DT_SIZE_K(64)>;
+};
+
+&clint {
+	status = "okay";
+};
+
+&mtimer {
+	status = "okay";
+};
