@@ -104,6 +104,13 @@ The True Random-Number Generator (TRNG) of the NEORV32 is supported, but disable
 NEORV32 SoC implementations supporting the TRNG, support can be enabled by setting the ``status``
 property of the ``trng`` devicetree node to ``okay``.
 
+Watchdog
+========
+
+The Watchdog (WDT) of the NEORV32 is supported, but disabled by default. For NEORV32 SoC
+implementations supporting the WDT, support can be enabled by setting the ``status`` property of
+the ``wdt`` devicetree node to ``okay``.
+
 Programming and Debugging
 *************************
 

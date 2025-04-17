@@ -1,0 +1,12 @@
+# NEORV32 watchdog configuration options
+
+# Copyright (c) 2025 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+config WDT_NEORV32
+	bool "NEORV32 WDT driver"
+	default y
+	depends on DT_HAS_NEORV32_WDT_ENABLED
+	depends on SYSCON
+	help
+	  Enable NEORV32 WDT driver.

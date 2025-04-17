@@ -11,6 +11,7 @@
 
 / {
 	chosen {
+		watchdog0 = &wdt;
 		zephyr,entropy = &trng;
 	};
 
@@ -116,6 +117,13 @@
 			compatible = "neorv32,trng";
 			status = "disabled";
 			reg = <0xfffa0000 0x10000>;
+			syscon = <&sysinfo>;
+		};
+
+		wdt: watchdog@fffb0000 {
+			compatible = "neorv32,wdt";
+			status = "disabled";
+			reg = <0xfffb0000 0x10000>;
 			syscon = <&sysinfo>;
 		};
 

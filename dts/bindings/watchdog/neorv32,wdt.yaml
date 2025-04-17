@@ -1,0 +1,27 @@
+description: NEORV32 Watchdog Timer (WDT)
+
+compatible: "neorv32,wdt"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  syscon:
+    type: phandle
+    required: true
+    description: |
+      phandle to syscon (NEORV32 SYSINFO) node.
+
+  lock:
+    type: boolean
+    description: |
+      Lock watchdog control register after enabling the watchdog. The lock is only cleared on system
+      reset.
+
+  strict:
+    type: boolean
+    description: |
+      Enable strict mode. This forces a system reset if a locked watchdog control register is
+      written or if a wrong watchdog reset password is used.
