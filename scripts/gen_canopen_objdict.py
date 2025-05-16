@@ -12,6 +12,35 @@ from typing import TextIO, Union
 
 import canopen
 
+# Mapping from CANopen data type to number of bits + C-type
+data_types = {
+    canopen.objectdictionary.datatypes.BOOLEAN: (1, "bool"),
+    canopen.objectdictionary.datatypes.INTEGER8: (8, "int8_t"),
+    canopen.objectdictionary.datatypes.INTEGER16: (16, "int16_t"),
+    canopen.objectdictionary.datatypes.INTEGER32: (32, "int32_t"),
+    canopen.objectdictionary.datatypes.UNSIGNED8: (8, "uint8_t"),
+    canopen.objectdictionary.datatypes.UNSIGNED16: (16, "uint16_t"),
+    canopen.objectdictionary.datatypes.UNSIGNED32: (32, "uint32_t"),
+    canopen.objectdictionary.datatypes.REAL32: (32, "float"),
+    canopen.objectdictionary.datatypes.VISIBLE_STRING: (8, "uint8_t"),
+    canopen.objectdictionary.datatypes.OCTET_STRING: (8, "uint8_t"),
+    canopen.objectdictionary.datatypes.UNICODE_STRING: (16, "uint16_t"),
+    canopen.objectdictionary.datatypes.TIME_OF_DAY: (48, "uint64_t"),
+    canopen.objectdictionary.datatypes.TIME_DIFFERENCE: (48, "uint64_t"),
+    canopen.objectdictionary.datatypes.DOMAIN: (0, "int"), # TODO
+    canopen.objectdictionary.datatypes.INTEGER24: (24, "int32_t"),
+    canopen.objectdictionary.datatypes.REAL64: (64, "double"),
+    canopen.objectdictionary.datatypes.INTEGER40: (40, "int64_t"),
+    canopen.objectdictionary.datatypes.INTEGER48: (48, "int64_t"),
+    canopen.objectdictionary.datatypes.INTEGER56: (56, "int64_t"),
+    canopen.objectdictionary.datatypes.INTEGER64: (64, "int64_t"),
+    canopen.objectdictionary.datatypes.UNSIGNED24: (24, "uint32_t"),
+    canopen.objectdictionary.datatypes.UNSIGNED40: (40, "uint64_t"),
+    canopen.objectdictionary.datatypes.UNSIGNED48: (48, "uint64_t"),
+    canopen.objectdictionary.datatypes.UNSIGNED56: (56, "uint64_t"),
+    canopen.objectdictionary.datatypes.UNSIGNED64: (64, "uint64_t"),
+}
+
 def generate_header(cmd: str, header: TextIO, prefix: str) -> None:
     """Generate CANopen object dictionary header file"""
     guard = f"__{prefix.upper()}_H__"
@@ -61,9 +90,13 @@ def write_entry(impl: TextIO, indent: int, comment: bool,
         attr += " | CANOPEN_OD_ATTR_RELATIVE"
 
     # TODO: fill data, min, max, size
-    # TODO: use look-up table for c-type, bits, and size
+
+    # TODO: handle non-existing mapping
+    bits = data_types[entry.data_type][0]
+    ctype = data_types[entry.data_type][1]
+
     impl.write(f"{tabs}CANOPEN_OD_ENTRY({entry.subindex}U, 0x{entry.data_type:04x}U, "
-               f"{len(entry)}U, NULL, NULL, NULL, 0U,\n"
+               f"{bits}U, &({ctype}){{ 0U }}, NULL, NULL, sizeof({ctype}),\n"
                f"{tabs}		 {attr}),\n")
 
 def write_object(impl: TextIO, indent: int, obj: Union[canopen.objectdictionary.ODVariable,
@@ -142,11 +175,12 @@ def parse_args():
         "--bindir", type=str,
         help="CMAKE_BINARY_DIR for pure logging purposes. No trailing slash.")
 
+    # TODO: add options for appending to the data type map
+
     return parser.parse_args()
 
 def main():
     """Parse arguments and generate CANopen object dictionary code"""
-    # TODO: store the cmd used for generating the files
     args = parse_args()
     objdict = canopen.import_od(args.input)
 
