@@ -151,6 +151,9 @@ def parse_args():
     group.add_argument(
         "-i", "--input", required=True, type=argparse.FileType('r'), metavar="FILE",
         help="CANopen object dictionary input file (EDS)")
+    group.add_argument(
+        "-d", "--deftype", action='append', metavar="DEFTYPE:CTYPE:BITS",
+        help="Add custom DEFTYPE definition")
 
     group = parser.add_argument_group("output arguments")
     group.add_argument(
@@ -167,14 +170,14 @@ def parse_args():
         "--bindir", type=str,
         help="CMAKE_BINARY_DIR for pure logging purposes. No trailing slash.")
 
-    # TODO: add options for appending to the data type map
-
     return parser.parse_args()
 
 def main():
     """Parse arguments and generate CANopen object dictionary code"""
     args = parse_args()
     objdict = canopen.import_od(args.input)
+
+    # TODO: parse args.deftype for appending to the data type map
 
     # Store the command used for generating the files
     cmd = []
