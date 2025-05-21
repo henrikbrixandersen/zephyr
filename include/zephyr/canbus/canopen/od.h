@@ -17,8 +17,10 @@
 
 #include <stdbool.h>
 
-#include <zephyr/canbus/canopen/sdo.h> /* SDO abort codes */
+#include <zephyr/canbus/canopen/sdo.h> /* for SDO abort codes */
 #include <zephyr/kernel.h>
+#include <zephyr/sys/iterable_sections.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 
 #ifdef __cplusplus
@@ -228,6 +230,8 @@ struct canopen_od_object {
  * @brief CANopen object dictionary
  */
 struct canopen_od {
+	/** Object dictionary name. */
+	const char *name;
 	/** CANopen object dictionary lock. */
 	struct k_mutex lock;
 	/** Number of objects. */
@@ -639,7 +643,8 @@ struct canopen_od {
  * @param _objects Array of objects
  */
 #define CANOPEN_OD_DEFINE(_name, _num_objects, _objects)                                           \
-	struct canopen_od _name = {                                                                \
+	STRUCT_SECTION_ITERABLE(canopen_od, _name) = {                                             \
+		.name = STRINGIFY(_name),                                                          \
 		.lock = Z_MUTEX_INITIALIZER(_name.lock),                                           \
 		.num_objects = _num_objects,                                                       \
 		.objects = _objects,                                                               \

@@ -5,4 +5,6 @@ if(CONFIG_CANOPEN_STACK_NATIVE)
   zephyr_library_sources(nmt.c)
   zephyr_library_sources(od.c)
   zephyr_library_sources(sdo.c)
+
+  zephyr_linker_sources(DATA_SECTIONS canopen.ld)
 endif()

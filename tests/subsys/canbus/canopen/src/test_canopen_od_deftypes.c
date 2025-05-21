@@ -7,17 +7,17 @@
 #include <zephyr/canbus/canopen/od.h>
 #include <zephyr/ztest.h>
 
+static uint32_t value;
+CANOPEN_OD_DEFINE_OBJECTS(od,
+	CANOPEN_OD_OBJECT_ENTRIES(0x0U,
+		CANOPEN_OD_ENTRY_UNSIGNED32(0U, &value, NULL, NULL, 0U),
+	),
+);
+
 ZTEST(canopen_od_deftypes, test_unsigned32)
 {
 	canopen_od_handle_t handle;
-	uint32_t value = 0U;
 	uint16_t type;
-
-	CANOPEN_OD_DEFINE_OBJECTS(od,
-		CANOPEN_OD_OBJECT_ENTRIES(0x0U,
-			CANOPEN_OD_ENTRY_UNSIGNED32(0U, &value, NULL, NULL, 0U),
-		),
-	);
 
 	handle = canopen_od_find(&od, 0U, 0U);
 	zassert_true(canopen_od_handle_is_valid(handle), "object is not present");
