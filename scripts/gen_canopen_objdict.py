@@ -12,33 +12,33 @@ from typing import TextIO, Union
 
 import canopen
 
-# Mapping from CANopen data type to number of bits + C-type
+# Mapping from CANopen data type to C-type + number of bits
 data_types = {
-    canopen.objectdictionary.datatypes.BOOLEAN: (1, "bool"),
-    canopen.objectdictionary.datatypes.INTEGER8: (8, "int8_t"),
-    canopen.objectdictionary.datatypes.INTEGER16: (16, "int16_t"),
-    canopen.objectdictionary.datatypes.INTEGER32: (32, "int32_t"),
-    canopen.objectdictionary.datatypes.UNSIGNED8: (8, "uint8_t"),
-    canopen.objectdictionary.datatypes.UNSIGNED16: (16, "uint16_t"),
-    canopen.objectdictionary.datatypes.UNSIGNED32: (32, "uint32_t"),
-    canopen.objectdictionary.datatypes.REAL32: (32, "float"),
-    canopen.objectdictionary.datatypes.VISIBLE_STRING: (8, "uint8_t"),
-    canopen.objectdictionary.datatypes.OCTET_STRING: (8, "uint8_t"),
-    canopen.objectdictionary.datatypes.UNICODE_STRING: (16, "uint16_t"),
-    canopen.objectdictionary.datatypes.TIME_OF_DAY: (48, "uint64_t"),
-    canopen.objectdictionary.datatypes.TIME_DIFFERENCE: (48, "uint64_t"),
-    canopen.objectdictionary.datatypes.DOMAIN: (0, "int"), # TODO
-    canopen.objectdictionary.datatypes.INTEGER24: (24, "int32_t"),
-    canopen.objectdictionary.datatypes.REAL64: (64, "double"),
-    canopen.objectdictionary.datatypes.INTEGER40: (40, "int64_t"),
-    canopen.objectdictionary.datatypes.INTEGER48: (48, "int64_t"),
-    canopen.objectdictionary.datatypes.INTEGER56: (56, "int64_t"),
-    canopen.objectdictionary.datatypes.INTEGER64: (64, "int64_t"),
-    canopen.objectdictionary.datatypes.UNSIGNED24: (24, "uint32_t"),
-    canopen.objectdictionary.datatypes.UNSIGNED40: (40, "uint64_t"),
-    canopen.objectdictionary.datatypes.UNSIGNED48: (48, "uint64_t"),
-    canopen.objectdictionary.datatypes.UNSIGNED56: (56, "uint64_t"),
-    canopen.objectdictionary.datatypes.UNSIGNED64: (64, "uint64_t"),
+    canopen.objectdictionary.datatypes.BOOLEAN: ("bool", 1),
+    canopen.objectdictionary.datatypes.INTEGER8: ("int8_t", 8),
+    canopen.objectdictionary.datatypes.INTEGER16: ("int16_t", 16),
+    canopen.objectdictionary.datatypes.INTEGER32: ("int32_t", 32),
+    canopen.objectdictionary.datatypes.UNSIGNED8: ("uint8_t", 8),
+    canopen.objectdictionary.datatypes.UNSIGNED16: ("uint16_t", 16),
+    canopen.objectdictionary.datatypes.UNSIGNED32: ("uint32_t", 32),
+    canopen.objectdictionary.datatypes.REAL32: ("float", 32),
+    canopen.objectdictionary.datatypes.VISIBLE_STRING: ("uint8_t", 8),
+    canopen.objectdictionary.datatypes.OCTET_STRING: ("uint8_t", 8),
+    canopen.objectdictionary.datatypes.UNICODE_STRING: ("uint16_t", 16),
+    canopen.objectdictionary.datatypes.TIME_OF_DAY: ("uint64_t", 48),
+    canopen.objectdictionary.datatypes.TIME_DIFFERENCE: ("uint64_t", 48),
+    canopen.objectdictionary.datatypes.DOMAIN: ("int", 0), # TODO
+    canopen.objectdictionary.datatypes.INTEGER24: ("int32_t", 24),
+    canopen.objectdictionary.datatypes.REAL64: ("double", 64),
+    canopen.objectdictionary.datatypes.INTEGER40: ("int64_t", 40),
+    canopen.objectdictionary.datatypes.INTEGER48: ("int64_t", 48),
+    canopen.objectdictionary.datatypes.INTEGER56: ("int64_t", 56),
+    canopen.objectdictionary.datatypes.INTEGER64: ("int64_t", 64),
+    canopen.objectdictionary.datatypes.UNSIGNED24: ("uint32_t", 24),
+    canopen.objectdictionary.datatypes.UNSIGNED40: ("uint64_t", 40),
+    canopen.objectdictionary.datatypes.UNSIGNED48: ("uint64_t", 48),
+    canopen.objectdictionary.datatypes.UNSIGNED56: ("uint64_t", 56),
+    canopen.objectdictionary.datatypes.UNSIGNED64: ("uint64_t", 64),
 }
 
 def generate_header(cmd: str, header: TextIO, prefix: str) -> None:
@@ -92,8 +92,8 @@ def write_entry(impl: TextIO, indent: int, comment: bool,
     # TODO: fill data, min, max, size
 
     # TODO: handle non-existing mapping
-    bits = data_types[entry.data_type][0]
-    ctype = data_types[entry.data_type][1]
+    ctype = data_types[entry.data_type][0]
+    bits = data_types[entry.data_type][1]
 
     impl.write(f"{tabs}CANOPEN_OD_ENTRY({entry.subindex}U, 0x{entry.data_type:04x}U, "
                f"{bits}U, &({ctype}){{ 0U }}, NULL, NULL, sizeof({ctype}),\n"
