@@ -599,8 +599,10 @@ struct canopen_od {
  * @{
  */
 
-/** @cond INTERNAL_HIDDEN */
-#define CANOPEN_OD_OBJECT_INITIALIZER(_index, _num_entries, _entries)                              \
+/**
+ * TODO
+ */
+#define CANOPEN_OD_OBJECT(_index, _num_entries, _entries)                                          \
 	{                                                                                          \
 		.index = _index,                                                                   \
 		.callback = NULL,                                                                  \
@@ -608,14 +610,13 @@ struct canopen_od {
 		.num_entries = _num_entries,                                                       \
 		.entries = _entries,                                                               \
 	}
-/** @endcond */
 
 /**
  * TODO
  */
 #define CANOPEN_OD_OBJECT_ENTRIES(_index, _entries...)                                             \
-	CANOPEN_OD_OBJECT_INITIALIZER(_index, ARRAY_SIZE(((struct canopen_od_entry[]){_entries})), \
-				      ((struct canopen_od_entry[]){_entries}))
+	CANOPEN_OD_OBJECT(_index, ARRAY_SIZE(((struct canopen_od_entry[]){_entries})),             \
+			  ((struct canopen_od_entry[]){_entries}))
 
 /** @} */
 
@@ -637,7 +638,7 @@ struct canopen_od {
  * @param _num_objects Number of objects in the array
  * @param _objects Array of objects
  */
-#define CANOPEN_OD_DEFINE(_name, _num_objects, _objects...)                                        \
+#define CANOPEN_OD_DEFINE(_name, _num_objects, _objects)                                           \
 	struct canopen_od _name = {                                                                \
 		.lock = Z_MUTEX_INITIALIZER(_name.lock),                                           \
 		.num_objects = _num_objects,                                                       \
