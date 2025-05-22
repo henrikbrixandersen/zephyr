@@ -20,6 +20,7 @@
 #include <zephyr/canbus/canopen/sdo.h> /* for SDO abort codes */
 #include <zephyr/kernel.h>
 #include <zephyr/sys/iterable_sections.h>
+#include <zephyr/sys/mutex.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 
@@ -232,8 +233,8 @@ struct canopen_od_object {
 struct canopen_od {
 	/** Object dictionary name. */
 	const char *name;
-	/** CANopen object dictionary lock. */
-	struct k_mutex lock;
+	/** Pointer to object dictionary lock. */
+	struct sys_mutex *lock;
 	/** Pointer to array of CANopen object dictionary objects, ordered by ascending index. */
 	const struct canopen_od_object *objects;
 	/** Number of objects. */
@@ -657,11 +658,11 @@ struct canopen_od {
  * @param _num_objects Number of objects in the array
  * @param _objects Pointer to the array of objects
  */
-/* TODO: STRUCT_SECTION_ITERABLE(canopen_od, _name) = { */
 #define CANOPEN_OD_DEFINE(_name, _num_objects, _objects)                                           \
-	struct canopen_od _name = {                                                                \
+	static SYS_MUTEX_DEFINE(_name##_lock);                                                     \
+	const struct canopen_od _name = {                                                          \
 		.name = STRINGIFY(_name),                                                          \
-		.lock = Z_MUTEX_INITIALIZER(_name.lock),                                           \
+		.lock = &_name##_lock,                                                             \
 		.objects = _objects,                                                               \
 		.num_objects = _num_objects,                                                       \
 	}
@@ -698,7 +699,19 @@ struct canopen_od {
  * @retval -EBUSY Returned without waiting
  * @retval -EAGAIN Waiting period timed out
  */
-int canopen_od_lock(struct canopen_od *od, k_timeout_t timeout);
+static inline int canopen_od_lock(struct canopen_od *od, k_timeout_t timeout)
+{
+	__ASSERT_NO_MSG(od != NULL);
+
+	return sys_mutex_lock(od->lock, timeout);
+}
+
+static inline int canopen_od_unlock(struct canopen_od *od)
+{
+	__ASSERT_NO_MSG(od != NULL);
+
+	return sys_mutex_unlock(od->lock);
+}
 
 /**
  * @brief Unlock the CANopen object dictionary.

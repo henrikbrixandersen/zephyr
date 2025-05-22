@@ -34,20 +34,6 @@ LOG_MODULE_REGISTER(canopen_od, CONFIG_CANOPEN_LOG_LEVEL);
 #define ARRAY_INDEX_PTR(_array_ptr, _item_ptr)                                                     \
 	((POINTER_TO_UINT(_item_ptr) - POINTER_TO_UINT(_array_ptr)) / sizeof(_array_ptr[0]))
 
-int canopen_od_lock(struct canopen_od *od, k_timeout_t timeout)
-{
-	__ASSERT_NO_MSG(od != NULL);
-
-	return k_mutex_lock(&od->lock, timeout);
-}
-
-int canopen_od_unlock(struct canopen_od *od)
-{
-	__ASSERT_NO_MSG(od != NULL);
-
-	return k_mutex_unlock(&od->lock);
-}
-
 bool canopen_od_handle_is_valid(canopen_od_handle_t handle)
 {
 	/* TODO: check against sub-index 0 for sub-indexes larger than zero */

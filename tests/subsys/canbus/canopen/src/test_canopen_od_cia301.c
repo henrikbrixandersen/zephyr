@@ -121,6 +121,9 @@ static void validate_pdo_mapping(uint16_t index, uint8_t size)
 
 ZTEST_USER(canopen_od_cia301, test_1000h)
 {
+	zassert_ok(canopen_od_lock(&test_cia301, K_FOREVER));
+	zassert_ok(canopen_od_unlock(&test_cia301));
+
 	/* 1000h - Device type */
 	validate_entry(0x1000U, 0U, CANOPEN_OD_DEFTYPE_UNSIGNED32, 32U, CANOPEN_OD_ATTR_ACCESS_RO);
 }
