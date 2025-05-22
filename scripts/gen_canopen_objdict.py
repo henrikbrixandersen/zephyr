@@ -55,6 +55,11 @@ def generate_header(cmd: str, header: TextIO, prefix: str) -> None:
                  "\n"
                  "#include <zephyr/canbus/canopen/od.h>\n"
                  "\n"
+                 "#ifdef CONFIG_USERSPACE\n"
+                 "#include <zephyr/kernel.h>\n"
+                 f"extern struct k_mem_partition {prefix}_partition;\n"
+                 "#endif /* CONFIG_USERSPACE */\n"
+                 "\n"
                  f"CANOPEN_OD_DECLARE({prefix});\n"
                  "\n"
                  f"#endif /* {guard} */\n")
@@ -129,6 +134,16 @@ def generate_impl(cmd: str, objdict: canopen.ObjectDictionary, impl: TextIO, pre
                "\n"
                "#include <zephyr/canbus/canopen/od.h>\n"
                "#include <zephyr/types.h>\n"
+               "\n"
+               "#ifdef CONFIG_USERSPACE\n"
+               "#include <zephyr/app_memory/app_memdomain.h>\n"
+               f"K_APPMEM_PARTITION_DEFINE({prefix}_partition);\n"
+               f"#define APP_BMEM K_APP_BMEM({prefix}_partition)\n"
+               f"#define APP_DMEM K_APP_DMEM({prefix}_partition)\n"
+               "#else /* CONFIG_USERSPACE */\n"
+               "#define APP_BMEM\n"
+               "#define APP_DMEM\n"
+               "#endif /* !CONFIG_USERSPACE */\n"
                "\n"
                f"CANOPEN_OD_DEFINE_OBJECTS({prefix},\n")
 
