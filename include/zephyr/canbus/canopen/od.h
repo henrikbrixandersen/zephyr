@@ -604,7 +604,12 @@ struct canopen_od {
  */
 
 /**
- * TODO
+ * @brief CANopen object initialization macro
+ * @see canopen_od_object
+ *
+ * @param _index 16-bit index of this object
+ * @param _num_entries Number of entries in the object
+ * @param _entries Pointer to the array of entries
  */
 #define CANOPEN_OD_OBJECT(_index, _num_entries, _entries)                                          \
 	{                                                                                          \
@@ -616,7 +621,14 @@ struct canopen_od {
 	}
 
 /**
- * TODO
+ * @brief CANopen object initialization macro with nested entries
+ * @see CANOPEN_OD_OBJECT
+ * @see canopen_od_object
+ *
+ * The nested entries will be declared as a compound literal array.
+ *
+ * @param _index 16-bit index of this object
+ * @param _entries Pointer to the array of entries
  */
 #define CANOPEN_OD_OBJECT_ENTRIES(_index, _entries...)                                             \
 	CANOPEN_OD_OBJECT(_index, ARRAY_SIZE(((struct canopen_od_entry[]){_entries})),             \
@@ -630,7 +642,10 @@ struct canopen_od {
  */
 
 /**
- * TODO
+ * @brief CANopen object dictionary declaration macro
+ * @see canopen_od
+ *
+ * @param _name Name of the CANopen object dictionary
  */
 #define CANOPEN_OD_DECLARE(_name) extern struct canopen_od _name
 
@@ -640,7 +655,7 @@ struct canopen_od {
  *
  * @param _name Name of the CANopen object dictionary
  * @param _num_objects Number of objects in the array
- * @param _objects Array of objects
+ * @param _objects Pointer to the array of objects
  */
 #define CANOPEN_OD_DEFINE(_name, _num_objects, _objects)                                           \
 	STRUCT_SECTION_ITERABLE(canopen_od, _name) = {                                             \
@@ -651,7 +666,14 @@ struct canopen_od {
 	}
 
 /**
- * TODO
+ * @brief CANopen object dictionary initialization macro with nested objects
+ * @see CANOPEN_OD_DEFINE
+ * @see canopen_od
+ *
+ * The nested objects will be declared as a compound literal array.
+ *
+ * @param _name Name of the CANopen object dictionary
+ * @param _objects Nested object initializers
  */
 #define CANOPEN_OD_DEFINE_OBJECTS(_name, _objects...)                                              \
 	CANOPEN_OD_DEFINE(_name, ARRAY_SIZE(((struct canopen_od_object[]){_objects})),             \
