@@ -64,14 +64,13 @@ def generate_header(cmd: str, header: TextIO, prefix: str) -> None:
                  "\n"
                  f"#endif /* {guard} */\n")
 
-def write_entry(impl: TextIO, indent: int, comment: bool,
+def write_entry(impl: TextIO, comment: bool,
                 entry: canopen.objectdictionary.ODVariable) -> None:
     """Write CANopen object dictionary object entry definition"""
-    tabs = "\t" * indent
     attr = "0U"
 
     if comment:
-        impl.write(f"{tabs}/* {entry.subindex} - {entry.name} */\n")
+        impl.write(f"\t/* {entry.subindex} - {entry.name} */\n")
 
     match entry.access_type:
         case "ro":
@@ -100,29 +99,30 @@ def write_entry(impl: TextIO, indent: int, comment: bool,
     ctype = data_types[entry.data_type][0]
     bits = data_types[entry.data_type][1]
 
-    impl.write(f"{tabs}CANOPEN_OD_ENTRY({entry.subindex}U, 0x{entry.data_type:04x}U, "
-               f"{bits}U, &({ctype}){{ 0U }}, NULL, NULL, sizeof({ctype}),\n"
-               f"{tabs}		 {attr}),\n")
+    impl.write(f"CANOPEN_OD_ENTRY({entry.subindex}U, 0x{entry.data_type:04x}U, "
+               f"{bits}U, NULL, NULL, NULL, sizeof({ctype}),\n"
+               f"\t\t\t {attr}),\n")
 
-def write_object(impl: TextIO, indent: int, obj: Union[canopen.objectdictionary.ODVariable,
-                                                       canopen.objectdictionary.ODArray,
-                                                       canopen.objectdictionary.ODRecord]) -> None:
-    """Write CANopen object dictionary object definition"""
-    tabs = "\t" * indent
+def write_object_entries(impl: TextIO, obj: Union[canopen.objectdictionary.ODVariable,
+                                                  canopen.objectdictionary.ODArray,
+                                                  canopen.objectdictionary.ODRecord],
+                         prefix: str) -> None:
+    """Write CANopen object dictionary object entries"""
 
-    impl.write(f"{tabs}/* {obj.index:04x}h - {obj.name} */\n"
-               f"{tabs}CANOPEN_OD_OBJECT_ENTRIES(0x{obj.index:04x}U,\n")
+    impl.write(f"/* {obj.index:04x}h - {obj.name} */\n"
+               f"static const struct canopen_od_entry "
+               f"{prefix}_object_{obj.index:04x}_entries[] = {{\n")
 
     if isinstance(obj, canopen.objectdictionary.ODVariable):
-        write_entry(impl, 2, False, obj)
+        write_entry(impl, False, obj)
     elif isinstance(obj, canopen.objectdictionary.ODArray):
         for entry in obj.values():
-            write_entry(impl, 2, True, entry)
+            write_entry(impl, True, entry)
     elif isinstance(obj, canopen.objectdictionary.ODRecord):
         for entry in obj.values():
-            write_entry(impl, 2, True, entry)
+            write_entry(impl, True, entry)
 
-    impl.write(f"{tabs}),\n")
+    impl.write("};\n\n")
 
 def generate_impl(cmd: str, objdict: canopen.ObjectDictionary, impl: TextIO, prefix: str) -> None:
     """Generate CANopen object dictionary implementation file"""
@@ -143,14 +143,20 @@ def generate_impl(cmd: str, objdict: canopen.ObjectDictionary, impl: TextIO, pre
                "#else /* CONFIG_USERSPACE */\n"
                "#define APP_BMEM\n"
                "#define APP_DMEM\n"
-               "#endif /* !CONFIG_USERSPACE */\n"
-               "\n"
-               f"CANOPEN_OD_DEFINE_OBJECTS({prefix},\n")
+               "#endif /* !CONFIG_USERSPACE */\n\n")
 
     for obj in objdict.values():
-        write_object(impl, 1, obj)
+        write_object_entries(impl, obj, prefix)
 
-    impl.write(");\n")
+    impl.write(f"APP_DMEM static struct canopen_od_object {prefix}_objects[] = {{\n")
+    for obj in objdict.values():
+        impl.write(f"\t/* {obj.index:04x}h - {obj.name} */\n"
+                   f"\tCANOPEN_OD_OBJECT(0x{obj.index:04x}U,\n"
+                   f"\t\t\t  ARRAY_SIZE({prefix}_object_{obj.index:04x}_entries),\n"
+                   f"\t\t\t  {prefix}_object_{obj.index:04x}_entries),\n")
+    impl.write("};\n\n")
+
+    impl.write(f"APP_DMEM CANOPEN_OD_DEFINE({prefix}, ARRAY_SIZE({prefix}_objects), {prefix}_objects);\n")
 
 def parse_args():
     """Parse arguments"""

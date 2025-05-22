@@ -119,7 +119,7 @@ static void validate_pdo_mapping(uint16_t index, uint8_t size)
 	}
 }
 
-ZTEST(canopen_od_cia301, test_1000h)
+ZTEST_USER(canopen_od_cia301, test_1000h)
 {
 	/* 1000h - Device type */
 	validate_entry(0x1000U, 0U, CANOPEN_OD_DEFTYPE_UNSIGNED32, 32U, CANOPEN_OD_ATTR_ACCESS_RO);
@@ -579,4 +579,13 @@ ZTEST(canopen_od_cia301, test_not_present)
 	validate_entry_not_present(0x1027U, 0U);
 }
 
-ZTEST_SUITE(canopen_od_cia301, NULL, NULL, NULL, NULL, NULL);
+void *canopen_od_cia301_setup(void)
+{
+#ifdef CONFIG_USERSPACE
+	zassert_ok(k_mem_domain_add_partition(&k_mem_domain_default, &test_cia301_partition));
+#endif /* CONFIG_USERSPACE */
+
+	return NULL;
+}
+
+ZTEST_SUITE(canopen_od_cia301, NULL, canopen_od_cia301_setup, NULL, NULL, NULL);

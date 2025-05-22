@@ -217,13 +217,13 @@ struct canopen_od_object {
 	canopen_od_callback_handler_t callback;
 	/** Optional callback user data */
 	void *user_data;
-	/** Number of entries. */
-	const uint8_t num_entries;
 	/**
 	 * Pointer to array of CANopen object dictionary entries for this object, ordered by
 	 * ascending sub-index.
 	 */
 	const struct canopen_od_entry *entries;
+	/** Number of entries. */
+	const uint8_t num_entries;
 };
 
 /**
@@ -234,10 +234,10 @@ struct canopen_od {
 	const char *name;
 	/** CANopen object dictionary lock. */
 	struct k_mutex lock;
-	/** Number of objects. */
-	const uint16_t num_objects;
 	/** Pointer to array of CANopen object dictionary objects, ordered by ascending index. */
 	const struct canopen_od_object *objects;
+	/** Number of objects. */
+	const uint16_t num_objects;
 };
 
 /**
@@ -616,8 +616,8 @@ struct canopen_od {
 		.index = _index,                                                                   \
 		.callback = NULL,                                                                  \
 		.user_data = NULL,                                                                 \
-		.num_entries = _num_entries,                                                       \
 		.entries = _entries,                                                               \
+		.num_entries = _num_entries,                                                       \
 	}
 
 /**
@@ -657,12 +657,13 @@ struct canopen_od {
  * @param _num_objects Number of objects in the array
  * @param _objects Pointer to the array of objects
  */
+/* TODO: STRUCT_SECTION_ITERABLE(canopen_od, _name) = { */
 #define CANOPEN_OD_DEFINE(_name, _num_objects, _objects)                                           \
-	STRUCT_SECTION_ITERABLE(canopen_od, _name) = {                                             \
+	struct canopen_od _name = {                                                                \
 		.name = STRINGIFY(_name),                                                          \
 		.lock = Z_MUTEX_INITIALIZER(_name.lock),                                           \
-		.num_objects = _num_objects,                                                       \
 		.objects = _objects,                                                               \
+		.num_objects = _num_objects,                                                       \
 	}
 
 /**
