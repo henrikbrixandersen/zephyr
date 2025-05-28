@@ -9,5 +9,7 @@ if(CONFIG_CANOPEN)
   zephyr_library_sources(od.c)
   zephyr_library_sources(sdo.c)
 
+  zephyr_library_sources_ifdef(CONFIG_CANOPEN_SHELL shell.c)
+
   zephyr_linker_sources_ifdef(CONFIG_CANOPEN_OD_INFO DATA_SECTIONS canopen.ld)
 endif()
