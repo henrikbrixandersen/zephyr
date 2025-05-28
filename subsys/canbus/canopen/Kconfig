@@ -37,6 +37,13 @@ endchoice # CANOPEN_STACK
 
 if CANOPEN_STACK_NATIVE
 
+config CANOPEN_SHELL
+	bool "CANopen shell"
+	depends on SHELL
+	select CANOPEN_OD_INFO
+	help
+	  Enable the CANopen shell module.
+
 config CANOPEN_USE_DEDICATED_WORKQUEUE
 	bool "Use a dedicated CANopen workqueue"
 	help
