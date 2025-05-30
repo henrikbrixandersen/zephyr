@@ -20,9 +20,21 @@ static const struct canopen_od *canopen_shell_get_od(const char *name)
 	return NULL;
 }
 
+static int canopen_shell_od_dump_entry_callback(const struct canopen_od *od,
+						canopen_od_handle_t handle, void *user_data)
+{
+	const struct shell *sh = user_data;
+
+	/* TODO */
+	shell_print(sh, "handle: 0x%08x", handle);
+
+	return 0;
+}
+
 static int cmd_canopen_od_dump(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct canopen_od *od = canopen_shell_get_od(argv[1]);
+	int err;
 
 	if (od == NULL) {
 		shell_error(sh, "objdict %s not found", argv[1]);
@@ -30,9 +42,12 @@ static int cmd_canopen_od_dump(const struct shell *sh, size_t argc, char **argv)
 	}
 
 	shell_print(sh, "dumping %s", argv[1]);
-	shell_print(sh, "\tnum_objects:\t%u", od->num_objects);
 
-	/* TODO */
+	err = canopen_od_foreach_entry(od, canopen_shell_od_dump_entry_callback, (void *)sh);
+	if (err != 0) {
+		shell_error(sh, "failed to dump objdict (err %d)", err);
+		return err;
+	}
 
 	return 0;
 }

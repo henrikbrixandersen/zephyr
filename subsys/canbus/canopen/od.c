@@ -110,6 +110,42 @@ static inline const struct canopen_od_entry *canopen_od_get_entry(const struct c
 	return NULL;
 }
 
+int canopen_od_foreach_entry(const struct canopen_od *od, canopen_od_foreach_entry_callback_t cb,
+			     void *user_data)
+{
+	const struct canopen_od_object *obj;
+	canopen_od_handle_t handle;
+	uint16_t obj_idx;
+	uint8_t entry_idx;
+	int err;
+
+	CHECKIF(od == NULL) {
+		LOG_DBG("NULL od");
+		return -EINVAL;
+	}
+
+	CHECKIF(cb == NULL) {
+		LOG_DBG("NULL cb");
+		return -EINVAL;
+	}
+
+	for (obj_idx = 0U; obj_idx < od->num_objects; obj_idx++) {
+		obj = &od->objects[obj_idx];
+
+		for (entry_idx = 0U; entry_idx < obj->num_entries; entry_idx++) {
+			handle = HANDLE_VALID | FIELD_PREP(HANDLE_OBJECT_IDX, obj_idx) |
+				 FIELD_PREP(HANDLE_ENTRY_IDX, entry_idx);
+
+			err = cb(od, handle, user_data);
+			if (err != 0U) {
+				return err;
+			}
+		}
+	}
+
+	return 0;
+}
+
 canopen_od_handle_t canopen_od_find(const struct canopen_od *od, uint16_t index, uint8_t subindex)
 {
 	struct canopen_od_object *obj;

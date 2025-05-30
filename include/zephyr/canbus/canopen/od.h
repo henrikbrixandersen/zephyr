@@ -714,6 +714,18 @@ struct canopen_od_info {
  */
 
 /**
+ * TODO
+ */
+typedef int (*canopen_od_foreach_entry_callback_t)(const struct canopen_od *od,
+						   canopen_od_handle_t handle, void *user_data);
+
+/**
+ * TODO
+ */
+int canopen_od_foreach_entry(const struct canopen_od *od, canopen_od_foreach_entry_callback_t cb,
+			     void *user_data);
+
+/**
  * @brief Lock the CANopen object dictionary.
  *
  * @param od Pointer to the CANopen object dictionary
