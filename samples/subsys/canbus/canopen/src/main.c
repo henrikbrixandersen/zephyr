@@ -21,7 +21,19 @@ static void state_callback(struct canopen_nmt *nmt, struct canopen_nmt_state_cal
 
 int main(void)
 {
+	const struct device *can = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
 	int err;
+
+	if (!device_is_ready(can)) {
+		LOG_ERR("CAN device not ready");
+		return -ENODEV;
+	}
+
+	err = canopen_nmt_init(&nmt, can, 127U);
+	if (err != 0) {
+		LOG_ERR("failed to initialize NMT object");
+		return err;
+	}
 
 	canopen_nmt_init_state_callback(&cb, state_callback);
 
@@ -31,9 +43,15 @@ int main(void)
 		return err;
 	}
 
-	err = canopen_nmt_init(&nmt, 127U);
+	err = can_start(can);
 	if (err != 0) {
-		LOG_ERR("failed to initialize NMT object");
+		LOG_ERR("failed to start CAN device (err %d)", err);
+		return err;
+	}
+
+	err = canopen_nmt_enable(&nmt);
+	if (err != 0) {
+		LOG_ERR("failed to enable CANopen NMT FSA (err %d)", err);
 		return err;
 	}
 

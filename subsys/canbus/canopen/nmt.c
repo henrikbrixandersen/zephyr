@@ -6,6 +6,7 @@
 
 #include <zephyr/canbus/canopen.h>
 #include <zephyr/device.h>
+#include <zephyr/drivers/can.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/smf.h>
@@ -14,6 +15,23 @@
 #include <zephyr/sys/slist.h>
 
 LOG_MODULE_REGISTER(canopen_nmt, CONFIG_CANOPEN_LOG_LEVEL);
+
+/* NMT node control protocol */
+#define CANOPEN_NMT_NODE_CONTROL_COB_ID                   0x0U
+#define CANOPEN_NMT_NODE_CONTROL_DLC                      2U
+#define CANOPEN_NMT_NODE_CONTROL_CS_START                 1U
+#define CANOPEN_NMT_NODE_CONTROL_CS_STOP                  2U
+#define CANOPEN_NMT_NODE_CONTROL_CS_ENTER_PRE_OPERATIONAL 128U
+#define CANOPEN_NMT_NODE_CONTROL_CS_RESET_NODE            129U
+#define CANOPEN_NMT_NODE_CONTROL_CS_RESET_COMMUNICATION   130U
+#define CANOPEN_NMT_NODE_CONTROL_NODE_ID_ALL              0U
+
+/* NMT error control protocol */
+#define CANOPEN_NMT_ERROR_CONTROL_COB_ID_BASE 0x700U
+
+/* NMT boot-up protocol */
+#define CANOPEN_NMT_BOOT_UP_COB_ID_BASE CANOPEN_NMT_ERROR_CONTROL_COB_ID_BASE
+#define CANOPEN_NMT_BOOT_UP_DLC         1U
 
 /* NMT events (CiA 301, figure 48) */
 enum canopen_nmt_event {
@@ -116,13 +134,28 @@ static void canopen_nmt_state_reset_communication_entry(void *obj)
 	smf_set_state(SMF_CTX(nmt), &canopen_nmt_states[CANOPEN_NMT_STATE_PRE_OPERATIONAL]);
 }
 
+static void canopen_nmt_state_reset_communication_exit(void *obj)
+{
+	struct canopen_nmt *nmt = obj;
+	struct can_frame frame = {0};
+	int err;
+
+	frame.id = CANOPEN_NMT_BOOT_UP_COB_ID_BASE + nmt->node_id;
+	frame.dlc = 1;
+
+	/* TODO: wait for boot-up write to complete? Use callback. */
+	err = can_send(nmt->can, &frame, K_FOREVER, NULL, NULL);
+	if (err != 0) {
+		LOG_ERR("failed to enqueue boot-up CAN frame (err %d)", err);
+		/* TODO: set new state or complete this state change? */
+	}
+}
+
 static void canopen_nmt_state_pre_operational_entry(void *obj)
 {
 	struct canopen_nmt *nmt = obj;
 
 	LOG_DBG("Pre-operational");
-
-	/* TODO: boot-up write */
 
 	canopen_nmt_fire_state_callbacks(nmt, CANOPEN_NMT_STATE_PRE_OPERATIONAL);
 }
@@ -245,7 +278,8 @@ static const struct smf_state canopen_nmt_states[] = {
 				 &canopen_nmt_states[CANOPEN_NMT_STATE_INITIALISATION], NULL),
 	/* Reset Communication (Initialisation sub-state) */
 	[CANOPEN_NMT_STATE_RESET_COMMUNICATION] =
-		SMF_CREATE_STATE(canopen_nmt_state_reset_communication_entry, NULL, NULL,
+		SMF_CREATE_STATE(canopen_nmt_state_reset_communication_entry, NULL,
+				 canopen_nmt_state_reset_communication_exit,
 				 &canopen_nmt_states[CANOPEN_NMT_STATE_INITIALISATION], NULL),
 	/* Pre-operational */
 	[CANOPEN_NMT_STATE_PRE_OPERATIONAL] =
@@ -271,6 +305,13 @@ static int canopen_nmt_event_enqueue(struct canopen_nmt *nmt, canopen_nmt_event_
 	}
 
 	return 0;
+}
+
+int canopen_nmt_enable(struct canopen_nmt *nmt)
+{
+	__ASSERT_NO_MSG(nmt != NULL);
+
+	return canopen_nmt_event_enqueue(nmt, CANOPEN_NMT_EVENT_POWER_ON);
 }
 
 int canopen_nmt_reset_node(struct canopen_nmt *nmt)
@@ -306,6 +347,53 @@ int canopen_nmt_stop(struct canopen_nmt *nmt)
 	__ASSERT_NO_MSG(nmt != NULL);
 
 	return canopen_nmt_event_enqueue(nmt, CANOPEN_NMT_EVENT_STOP);
+}
+
+static void canopen_nmt_node_control_callback(const struct device *dev, struct can_frame *frame,
+					      void *user_data)
+{
+	struct canopen_nmt *nmt = user_data;
+	uint8_t node_id;
+	uint8_t cs;
+	int err = 0;
+
+	if (frame->dlc != CANOPEN_NMT_NODE_CONTROL_DLC) {
+		/* Non-compliant frame length, ignore */
+		return;
+	}
+
+	cs = frame->data[0];
+	node_id = frame->data[1];
+
+	if ((node_id != CANOPEN_NMT_NODE_CONTROL_NODE_ID_ALL) && (node_id != nmt->node_id)) {
+		/* Non-matching node-ID, ignore */
+		return;
+	}
+
+	switch (frame->data[0]) {
+	case CANOPEN_NMT_NODE_CONTROL_CS_START:
+		err = canopen_nmt_start(nmt);
+		break;
+	case CANOPEN_NMT_NODE_CONTROL_CS_STOP:
+		err = canopen_nmt_stop(nmt);
+		break;
+	case CANOPEN_NMT_NODE_CONTROL_CS_ENTER_PRE_OPERATIONAL:
+		err = canopen_nmt_enter_pre_operational(nmt);
+		break;
+	case CANOPEN_NMT_NODE_CONTROL_CS_RESET_NODE:
+		err = canopen_nmt_reset_node(nmt);
+		break;
+	case CANOPEN_NMT_NODE_CONTROL_CS_RESET_COMMUNICATION:
+		err = canopen_nmt_reset_communication(nmt);
+		break;
+	default:
+		/* Unknown command specifier, ignore */
+	}
+
+	if (err != 0) {
+		LOG_ERR("failed to enqueue remote node control command specifier %d (err %d)", cs,
+			err);
+	}
 }
 
 static void canopen_nmt_event_thread(void *p1, void *p2, void *p3)
@@ -387,9 +475,11 @@ unlock:
 	return err;
 }
 
-int canopen_nmt_init(struct canopen_nmt *nmt, uint8_t node_id)
+int canopen_nmt_init(struct canopen_nmt *nmt, const struct device *can, uint8_t node_id)
 {
+	struct can_filter filter;
 	k_tid_t tid;
+	int err;
 
 	__ASSERT_NO_MSG(nmt != NULL);
 
@@ -398,6 +488,7 @@ int canopen_nmt_init(struct canopen_nmt *nmt, uint8_t node_id)
 		return -EINVAL;
 	}
 
+	nmt->can = can;
 	nmt->node_id = node_id;
 
 	k_msgq_init(&nmt->eventq, nmt->eventq_buf, sizeof(canopen_nmt_event_t),
@@ -409,6 +500,12 @@ int canopen_nmt_init(struct canopen_nmt *nmt, uint8_t node_id)
 			      K_NO_WAIT);
 	k_thread_name_set(tid, "canopen_nmt");
 
-	/* Run initial state entry functions in the event thread context */
-	return canopen_nmt_event_enqueue(nmt, CANOPEN_NMT_EVENT_POWER_ON);
+	canopen_cob_id_to_can_filter(CANOPEN_NMT_NODE_CONTROL_COB_ID, &filter);
+	err = can_add_rx_filter(nmt->can, canopen_nmt_node_control_callback, nmt, &filter);
+	if (err != 0) {
+		LOG_ERR("failed to add CANopen NMT CAN filter (err %d)", err);
+		return -EIO;
+	}
+
+	return 0;
 }

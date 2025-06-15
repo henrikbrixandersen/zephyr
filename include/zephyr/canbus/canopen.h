@@ -14,9 +14,13 @@
  * @{
  */
 
+#include <string.h>
+
 #include <zephyr/canbus/canopen/nmt.h>
 #include <zephyr/canbus/canopen/od.h>
 #include <zephyr/canbus/canopen/sdo.h>
+#include <zephyr/drivers/can.h>
+#include <zephyr/sys/util.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -28,16 +32,6 @@ extern "C" {
  * @ingroup canopen
  * @{
  */
-
-/**
- * @brief Minimum allowed value for a CANopen node-ID
- */
-#define CANOPEN_NODE_ID_MIN 1
-
-/**
- * @brief Maximum allowed value for a CANopen node-ID
- */
-#define CANOPEN_NODE_ID_MAX 127
 
 struct canopen {
 	struct canopen_od *od;
@@ -67,6 +61,53 @@ int canopen_init(struct canopen *co, uint32_t bitrate, uint8_t node_id, struct c
  * @return Zero on success or negative error code otherwise.
  */
 int canopen_start(void);
+
+/**
+ * @}
+ */
+
+/**
+ * @brief CANopen protocol stack utilities
+ * @defgroup canopen_init Utilities
+ * @ingroup canopen
+ * @{
+ */
+
+/**
+ * @brief Minimum allowed value for a CANopen node-ID
+ */
+#define CANOPEN_NODE_ID_MIN 1
+
+/**
+ * @brief Maximum allowed value for a CANopen node-ID
+ */
+#define CANOPEN_NODE_ID_MAX 127
+
+/**
+ * @brief CANopen COB-ID frame bit
+ */
+#define CANOPEN_COB_ID_FRAME BIT(29)
+
+/**
+ * @brief Fill in a @a struct can_filter to match a given CANopen COB-ID.
+ *
+ * @param cob_id the CANopen COB-ID.
+ * @param filter the CAN RX filter.
+ */
+static inline void canopen_cob_id_to_can_filter(uint32_t cob_id, struct can_filter *filter)
+{
+	uint32_t mask = CAN_STD_ID_MASK;
+
+	memset(filter, 0, sizeof(*filter));
+
+	if ((cob_id & CANOPEN_COB_ID_FRAME) != 0U) {
+		mask = CAN_EXT_ID_MASK;
+		filter->flags = CAN_FILTER_IDE;
+	}
+
+	filter->id = cob_id & mask;
+	filter->mask = mask;
+}
 
 /**
  * @}

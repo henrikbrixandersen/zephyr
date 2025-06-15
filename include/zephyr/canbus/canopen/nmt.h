@@ -16,6 +16,7 @@
  */
 
 #include <zephyr/device.h>
+#include <zephyr/drivers/can.h>
 #include <zephyr/kernel.h>
 #include <zephyr/smf.h>
 #include <zephyr/spinlock.h>
@@ -139,12 +140,40 @@ struct canopen_nmt {
 /**
  * @brief Initialize CANopen NMT object
  *
+ * The CANopen NMT object must be initialized prior to calling any other CANopen NMT API functions.
+ *
  * @param nmt Pointer to the CANopen NMT object.
+ * @param can Pointer to the CAN controller device instance.
  * @param node_id CANopen node-ID (1 to 127).
  * @retval 0 on success.
  * @retval -EINVAL if the provided node-ID is invalid.
+ * @retval -EIO if configuration of the CAN device failed.
  */
-int canopen_nmt_init(struct canopen_nmt *nmt, uint8_t node_id);
+int canopen_nmt_init(struct canopen_nmt *nmt, const struct device *can, uint8_t node_id);
+
+/**
+ * @brief Enable CANopen NMT object
+ *
+ * Enable the CANopen NMT object.
+ *
+ * @param nmt Pointer to the CANopen NMT object.
+ * @retval 0 on success.
+ * @return 0 on success, negative errno otherwise
+ */
+int canopen_nmt_enable(struct canopen_nmt *nmt);
+
+/**
+ * @brief Reset local node
+ *
+ * Enqueue an event for the local CANopen NMT object to asynchronously enter the @a
+ * CANOPEN_NMT_STATE_RESET_APPLICATION state.
+ *
+ * @note The event will be ignored if it would result in an invalid state transition.
+ *
+ * @param nmt Pointer to the CANopen NMT object.
+ * @return 0 on success, negative errno otherwise
+ */
+int canopen_nmt_reset_node(struct canopen_nmt *nmt);
 
 /**
  * @brief Initialize a CANopen NMT state callback
