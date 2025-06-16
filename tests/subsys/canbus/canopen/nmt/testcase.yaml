@@ -1,0 +1,8 @@
+tests:
+  canbus.canopen.nmt:
+    integration_platforms:
+      - native_sim
+      - native_sim/native/64
+    tags:
+      - can
+      - canopen
