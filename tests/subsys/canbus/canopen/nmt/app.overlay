@@ -1,0 +1,12 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2025-2026 Henrik Brix Andersen <henrik@brixandersen.dk>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/{
+	fake_can: fake-can {
+		compatible = "zephyr,fake-can";
+		status = "okay";
+	};
+};
