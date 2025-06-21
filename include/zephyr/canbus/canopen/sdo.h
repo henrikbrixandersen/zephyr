@@ -15,6 +15,8 @@
  * @{
  */
 
+#include <zephyr/canbus/canopen/od.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -88,6 +90,10 @@ enum canopen_sdo_abort_code {
 	CANOPEN_SDO_ABORT_NO_DATA_AVAILABLE =           0x08000024U,
 };
 /* clang-format on */
+
+struct canopen_sdo_server {
+	struct canopen_od *od;
+};
 
 /**
  * @brief Get the description of a CANopen SDO abort code

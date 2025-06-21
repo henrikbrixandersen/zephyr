@@ -378,7 +378,31 @@ ZTEST(canopen_nmt_fsa, boot_up_write_delayed_ack)
  */
 ZTEST(canopen_nmt_fsa, boot_up_write_no_ack)
 {
-	/* TODO: test boot-up write without ACK followed by local node control */
+	enum canopen_nmt_state transitions1[] = {
+		CANOPEN_NMT_STATE_INITIALISATION,
+		CANOPEN_NMT_STATE_RESET_APPLICATION,
+		CANOPEN_NMT_STATE_RESET_COMMUNICATION,
+	};
+	enum canopen_nmt_state transitions2[] = {
+		CANOPEN_NMT_STATE_INITIALISATION,
+		CANOPEN_NMT_STATE_RESET_COMMUNICATION,
+	};
+
+	frame_capture_no_ack = true;
+
+	zassert_ok(canopen_nmt_reset_node(&dut));
+	verify_state_transitions(transitions1, ARRAY_SIZE(transitions1));
+
+	zassert_ok(canopen_nmt_reset_node(&dut));
+	verify_state_transitions(transitions1, ARRAY_SIZE(transitions1));
+
+	zassert_ok(canopen_nmt_reset_communication(&dut));
+	verify_state_transitions(transitions2, ARRAY_SIZE(transitions2));
+
+	/* Emulate boot-up write CAN frame ACK */
+	zassert_not_null(frame_capture_callback);
+	frame_capture_callback(fake_can_dev, 0, frame_capture_user_data);
+	verify_state_transition(CANOPEN_NMT_STATE_PRE_OPERATIONAL);
 }
 
 /**

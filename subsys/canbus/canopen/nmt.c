@@ -33,12 +33,21 @@ LOG_MODULE_REGISTER(canopen_nmt, CONFIG_CANOPEN_LOG_LEVEL);
 #define CANOPEN_NMT_BOOT_UP_COB_ID_BASE CANOPEN_NMT_ERROR_CONTROL_COB_ID_BASE
 #define CANOPEN_NMT_BOOT_UP_DLC         1U
 
+enum canopen_nmt_state_internal {
+	/* Internal state for performing the boot-up write */
+	CANOPEN_NMT_STATE_INTERNAL_BOOT_UP_WRITE = CANOPEN_NMT_STATE_STOPPED + 1U,
+};
+
 /* NMT events (CiA 301, figure 48) */
 enum canopen_nmt_event {
 	/* Power on or hardware reset, transition (1) */
 	CANOPEN_NMT_EVENT_POWER_ON,
 	/* NMT service start node indication, transition (3),(6) */
 	CANOPEN_NMT_EVENT_START,
+	/* NMT boot-up write ACK received */
+	CANOPEN_NMT_EVENT_BOOT_UP_WRITE_ACK,
+	/* NMT boot-up write error */
+	CANOPEN_NMT_EVENT_BOOT_UP_WRITE_ERROR,
 	/* NMT service enter pre-operational indication, transitions (4),(7) */
 	CANOPEN_NMT_EVENT_ENTER_PRE_OPERATIONAL,
 	/* NMT service stop node indication, transitions (5),(8) */
@@ -85,6 +94,32 @@ static void canopen_nmt_fire_state_callbacks(struct canopen_nmt *nmt, enum canop
 	}
 }
 
+static int canopen_nmt_event_enqueue(struct canopen_nmt *nmt, canopen_nmt_event_t event)
+{
+	int err;
+
+	err = k_msgq_put(&nmt->eventq, &event, K_NO_WAIT);
+	if (err != 0) {
+		LOG_ERR("failed to enqueue event %u (err %d)", event, err);
+		return err;
+	}
+
+	return 0;
+}
+
+static void canopen_nmt_boot_up_write_tx_callback(const struct device *dev, int error,
+						  void *user_data)
+{
+	struct canopen_nmt *nmt = user_data;
+
+	if (error == 0) {
+		(void)canopen_nmt_event_enqueue(nmt, CANOPEN_NMT_EVENT_BOOT_UP_WRITE_ACK);
+	} else {
+		LOG_WRN("failed to perform boot-up write (err %d)", error);
+		(void)canopen_nmt_event_enqueue(nmt, CANOPEN_NMT_EVENT_BOOT_UP_WRITE_ERROR);
+	}
+}
+
 static void canopen_nmt_state_initialisation_entry(void *obj)
 {
 	struct canopen_nmt *nmt = obj;
@@ -92,6 +127,8 @@ static void canopen_nmt_state_initialisation_entry(void *obj)
 	LOG_DBG("Initialisation");
 
 	canopen_nmt_fire_state_callbacks(nmt, CANOPEN_NMT_STATE_INITIALISATION);
+
+	/* TODO: call can_stop() */
 }
 
 static void canopen_nmt_state_initialising_entry(void *obj)
@@ -112,9 +149,12 @@ static void canopen_nmt_state_reset_application_entry(void *obj)
 
 	LOG_DBG("Reset application");
 
-	canopen_nmt_fire_state_callbacks(nmt, CANOPEN_NMT_STATE_RESET_APPLICATION);
+	/* TODO: set manufacturer-specific (2000h to 5FFFh) and standardized device profile */
+	/* (6000h to 9FFFh) areas to their power-on values */
 
-	/* TODO: set manufacturer-specific and standardized device areas their power-on values */
+	/* TODO: set node-ID and bitrate settings to their power-on values. */
+
+	canopen_nmt_fire_state_callbacks(nmt, CANOPEN_NMT_STATE_RESET_APPLICATION);
 
 	/* CiA 301, figure 49, transition (16) */
 	smf_set_state(SMF_CTX(nmt), &canopen_nmt_states[CANOPEN_NMT_STATE_RESET_COMMUNICATION]);
@@ -126,15 +166,17 @@ static void canopen_nmt_state_reset_communication_entry(void *obj)
 
 	LOG_DBG("Reset communication");
 
+	/* TODO: set communication profile area (1000h to 1FFFh) to its power-on values */
+
 	canopen_nmt_fire_state_callbacks(nmt, CANOPEN_NMT_STATE_RESET_COMMUNICATION);
 
-	/* TODO: set communication profile area to its power-on values */
+	/* TODO: re-configure CAN */
 
-	/* CiA 301, figure 49, transition (2) */
-	smf_set_state(SMF_CTX(nmt), &canopen_nmt_states[CANOPEN_NMT_STATE_PRE_OPERATIONAL]);
+	/* CiA 301, figure 49, transition (2), part 1 of 2 */
+	smf_set_state(SMF_CTX(nmt), &canopen_nmt_states[CANOPEN_NMT_STATE_INTERNAL_BOOT_UP_WRITE]);
 }
 
-static void canopen_nmt_state_reset_communication_exit(void *obj)
+static void canopen_nmt_state_internal_boot_up_write_entry(void *obj)
 {
 	struct canopen_nmt *nmt = obj;
 	struct can_frame frame = {0};
@@ -143,12 +185,41 @@ static void canopen_nmt_state_reset_communication_exit(void *obj)
 	frame.id = CANOPEN_NMT_BOOT_UP_COB_ID_BASE + nmt->node_id;
 	frame.dlc = 1;
 
-	/* TODO: wait for boot-up write to complete? Use callback. */
-	err = can_send(nmt->can, &frame, K_FOREVER, NULL, NULL);
+	/* TODO: forever? */
+	err = can_send(nmt->can, &frame, K_FOREVER, canopen_nmt_boot_up_write_tx_callback, nmt);
 	if (err != 0) {
 		LOG_ERR("failed to enqueue boot-up CAN frame (err %d)", err);
 		/* TODO: set new state or complete this state change? */
 	}
+}
+
+static enum smf_state_result canopen_nmt_state_internal_boot_up_write_run(void *obj)
+{
+	struct canopen_nmt *nmt = obj;
+
+	switch (nmt->event) {
+	case CANOPEN_NMT_EVENT_BOOT_UP_WRITE_ACK:
+		/* CiA 301, figure 49, transition (2), part 2 of 2 */
+		smf_set_state(SMF_CTX(nmt), &canopen_nmt_states[CANOPEN_NMT_STATE_PRE_OPERATIONAL]);
+		break;
+	case CANOPEN_NMT_EVENT_BOOT_UP_WRITE_ERROR:
+		/* TODO: retry by transitioning to self? with delay? transition back to init? */
+		break;
+	case CANOPEN_NMT_EVENT_RESET_NODE:
+		/* Allow aborting pending boot-up write ACK by local node control */
+		smf_set_state(SMF_CTX(nmt),
+			      &canopen_nmt_states[CANOPEN_NMT_STATE_RESET_APPLICATION]);
+		break;
+	case CANOPEN_NMT_EVENT_RESET_COMMUNICATION:
+		/* Allow aborting pending boot-up write ACK by local node control */
+		smf_set_state(SMF_CTX(nmt),
+			      &canopen_nmt_states[CANOPEN_NMT_STATE_RESET_COMMUNICATION]);
+		break;
+	default:
+		return SMF_EVENT_PROPAGATE;
+	}
+
+	return SMF_EVENT_HANDLED;
 }
 
 static void canopen_nmt_state_pre_operational_entry(void *obj)
@@ -284,9 +355,12 @@ static const struct smf_state canopen_nmt_states[] = {
 				 &canopen_nmt_states[CANOPEN_NMT_STATE_INITIALISATION], NULL),
 	/* Reset Communication (Initialisation sub-state) */
 	[CANOPEN_NMT_STATE_RESET_COMMUNICATION] =
-		SMF_CREATE_STATE(canopen_nmt_state_reset_communication_entry, NULL,
-				 canopen_nmt_state_reset_communication_exit,
+		SMF_CREATE_STATE(canopen_nmt_state_reset_communication_entry, NULL, NULL,
 				 &canopen_nmt_states[CANOPEN_NMT_STATE_INITIALISATION], NULL),
+	/* Boot-up write (internal sub-state) */
+	[CANOPEN_NMT_STATE_INTERNAL_BOOT_UP_WRITE] =
+		SMF_CREATE_STATE(canopen_nmt_state_internal_boot_up_write_entry,
+				 canopen_nmt_state_internal_boot_up_write_run, NULL, NULL, NULL),
 	/* Pre-operational */
 	[CANOPEN_NMT_STATE_PRE_OPERATIONAL] =
 		SMF_CREATE_STATE(canopen_nmt_state_pre_operational_entry,
@@ -299,19 +373,6 @@ static const struct smf_state canopen_nmt_states[] = {
 	[CANOPEN_NMT_STATE_STOPPED] = SMF_CREATE_STATE(
 		canopen_nmt_state_stopped_entry, canopen_nmt_state_stopped_run, NULL, NULL, NULL),
 };
-
-static int canopen_nmt_event_enqueue(struct canopen_nmt *nmt, canopen_nmt_event_t event)
-{
-	int err;
-
-	err = k_msgq_put(&nmt->eventq, &event, K_NO_WAIT);
-	if (err != 0) {
-		LOG_ERR("failed to enqueue event %u (err %d)", event, err);
-		return err;
-	}
-
-	return 0;
-}
 
 int canopen_nmt_enable(struct canopen_nmt *nmt)
 {

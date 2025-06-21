@@ -115,6 +115,10 @@ struct canopen_od_entry;
 #define CANOPEN_OD_DEFSTRUCT_SDO_PARAMETER               0x0022U
 /** Identity type. */
 #define CANOPEN_OD_DEFSTRUCT_IDENTITY                    0x0023U
+/** OS debug record. */
+#define CANOPEN_OD_DEFSTRUCT_OS_DEBUG_RECORD             0x0024U
+/** OS command record. */
+#define CANOPEN_OD_DEFSTRUCT_OS_COMMAND_RECORD           0x0025U
 /** @} */
 
 /**
