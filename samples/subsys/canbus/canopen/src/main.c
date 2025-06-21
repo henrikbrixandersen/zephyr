@@ -43,6 +43,7 @@ int main(void)
 		return err;
 	}
 
+	/* TODO: move this to nmt.c */
 	err = can_start(can);
 	if (err != 0) {
 		LOG_ERR("failed to start CAN device (err %d)", err);
@@ -55,30 +56,30 @@ int main(void)
 		return err;
 	}
 
-	k_msleep(100);
+	/* k_msleep(100); */
 
-	LOG_INF("starting");
-	canopen_nmt_start(&nmt);
+	/* LOG_INF("starting"); */
+	/* canopen_nmt_start(&nmt); */
 
-	k_msleep(100);
+	/* k_msleep(100); */
 
-	LOG_INF("entering pre-operational");
-	canopen_nmt_enter_pre_operational(&nmt);
+	/* LOG_INF("entering pre-operational"); */
+	/* canopen_nmt_enter_pre_operational(&nmt); */
 
-	k_msleep(100);
+	/* k_msleep(100); */
 
-	LOG_INF("stopping");
-	canopen_nmt_stop(&nmt);
+	/* LOG_INF("stopping"); */
+	/* canopen_nmt_stop(&nmt); */
 
-	k_msleep(100);
+	/* k_msleep(100); */
 
-	LOG_INF("resetting communication");
-	canopen_nmt_reset_communication(&nmt);
+	/* LOG_INF("resetting communication"); */
+	/* canopen_nmt_reset_communication(&nmt); */
 
-	k_msleep(100);
+	/* k_msleep(100); */
 
-	LOG_INF("resetting node");
-	canopen_nmt_reset_node(&nmt);
+	/* LOG_INF("resetting node"); */
+	/* canopen_nmt_reset_node(&nmt); */
 
 	return 0;
 }
