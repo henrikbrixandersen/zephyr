@@ -108,10 +108,12 @@ const char *canopen_sdo_abort_code_str(uint32_t abort_code)
 	};
 }
 
-static void canopen_sdo_server_request_callback(const struct device *dev, struct can_frame *frame,
+static void canopen_sdo_server_request_callback(const struct device *can, struct can_frame *frame,
 						void *user_data)
 {
 	/* struct canopen_sdo_server *server = user_data; */
+
+	ARG_UNUSED(can);
 
 	LOG_INF("data[0] = 0x%02x", frame->data[0]);
 }

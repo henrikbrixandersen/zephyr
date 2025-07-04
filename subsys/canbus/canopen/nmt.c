@@ -418,13 +418,15 @@ int canopen_nmt_stop(struct canopen_nmt *nmt)
 	return canopen_nmt_event_enqueue(nmt, CANOPEN_NMT_EVENT_STOP);
 }
 
-static void canopen_nmt_node_control_callback(const struct device *dev, struct can_frame *frame,
+static void canopen_nmt_node_control_callback(const struct device *can, struct can_frame *frame,
 					      void *user_data)
 {
 	struct canopen_nmt *nmt = user_data;
 	uint8_t node_id;
 	uint8_t cs;
 	int err = 0;
+
+	ARG_UNUSED(can);
 
 	if (frame->dlc != CANOPEN_NMT_NODE_CONTROL_DLC) {
 		/* Non-compliant frame length, ignore */
