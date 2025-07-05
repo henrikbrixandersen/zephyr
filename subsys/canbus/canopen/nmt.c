@@ -341,7 +341,7 @@ static enum smf_state_result canopen_nmt_state_stopped_run(void *obj)
 	return SMF_EVENT_HANDLED;
 }
 
-/* Populate the CANopen NMT FSA state table */
+/* CANopen NMT FSA state table */
 static const struct smf_state canopen_nmt_states[] = {
 	/* Initialisation parent state */
 	[CANOPEN_NMT_STATE_INITIALISATION] =

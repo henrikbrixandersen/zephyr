@@ -8,35 +8,40 @@
 #include <zephyr/canbus/canopen/sdo.h>
 #include <zephyr/drivers/can.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/smf.h>
 #include <zephyr/sys/util.h>
 
 LOG_MODULE_REGISTER(canopen_sdo, CONFIG_CANOPEN_LOG_LEVEL);
 
 /* SDO Client Command Specifier (CCS) */
-#define CCS_MASK                      GENMASK(7, 5)
-#define CCS_DOWNLOAD_SEGMENT_REQUEST  0U
-#define CCS_INITIATE_DOWNLOAD_REQUEST 1U
-#define CCS_INITIATE_UPLOAD_REQUEST   2U
-#define CCS_UPLOAD_SEGMENT_REQUEST    3U
-#define CCS_BLOCK_UPLOAD_REQUEST      5U
-#define CCS_BLOCK_DOWNLOAD_REQUEST    6U
+#define CANOPEN_SDO_CCS_MASK                      GENMASK(7, 5)
+#define CANOPEN_SDO_CCS_DOWNLOAD_SEGMENT_REQUEST  0U
+#define CANOPEN_SDO_CCS_INITIATE_DOWNLOAD_REQUEST 1U
+#define CANOPEN_SDO_CCS_INITIATE_UPLOAD_REQUEST   2U
+#define CANOPEN_SDO_CCS_UPLOAD_SEGMENT_REQUEST    3U
+#define CANOPEN_SDO_CCS_BLOCK_UPLOAD_REQUEST      5U
+#define CANOPEN_SDO_CCS_BLOCK_DOWNLOAD_REQUEST    6U
 
 /* SDO Server Command Specifier (SCS) */
-#define SCS_MASK                       GENMASK(7, 5)
-#define SCS_UPLOAD_SEGMENT_RESPONSE    0U
-#define SCS_DOWNLOAD_SEGMENT_RESPONSE  1U
-#define SCS_INITIATE_UPLOAD_RESPONSE   2U
-#define SCS_INITIATE_DOWNLOAD_RESPONSE 3U
-#define SCS_BLOCK_DOWNLOAD_RESPONSE    5U
-#define SCS_BLOCK_UPLOAD_RESPONSE      6U
+#define CANOPEN_SDO_SCS_MASK                       GENMASK(7, 5)
+#define CANOPEN_SDO_SCS_UPLOAD_SEGMENT_RESPONSE    0U
+#define CANOPEN_SDO_SCS_DOWNLOAD_SEGMENT_RESPONSE  1U
+#define CANOPEN_SDO_SCS_INITIATE_UPLOAD_RESPONSE   2U
+#define CANOPEN_SDO_SCS_INITIATE_DOWNLOAD_RESPONSE 3U
+#define CANOPEN_SDO_SCS_BLOCK_DOWNLOAD_RESPONSE    5U
+#define CANOPEN_SDO_SCS_BLOCK_UPLOAD_RESPONSE      6U
 
 /* SDO Command Specifier (CS) */
-#define CS_MASK                   GENMASK(7, 5)
-#define CS_ABORT_TRANSFER_REQUEST 4U
+#define CANOPEN_SDO_CS_MASK                   GENMASK(7, 5)
+#define CANOPEN_SDO_CS_ABORT_TRANSFER_REQUEST 4U
 
-/* SDO number limits */
-#define SDO_NUMBER_MIN 1
-#define SDO_NUMBER_MAX 128
+enum canopen_sdo_server_state {
+	CANOPEN_SDO_SERVER_STATE_IDLE,
+	CANOPEN_SDO_SERVER_STATE_DOWNLOAD,
+	CANOPEN_SDO_SERVER_STATE_UPLOAD,
+	CANOPEN_SDO_SERVER_STATE_BLOCK_DOWNLOAD,
+	CANOPEN_SDO_SERVER_STATE_BLOCK_UPLOAD,
+};
 
 const char *canopen_sdo_abort_code_str(uint32_t abort_code)
 {
@@ -108,6 +113,29 @@ const char *canopen_sdo_abort_code_str(uint32_t abort_code)
 	};
 }
 
+static enum smf_state_result canopen_sdo_server_state_idle_run(void *obj)
+{
+	/* struct canopen_sdo_server *server = obj; */
+
+	/* TODO */
+
+	return SMF_EVENT_HANDLED;
+}
+
+/* CANopen SDO server state table */
+static const struct smf_state canopen_sdo_server_states[] = {
+	[CANOPEN_SDO_SERVER_STATE_IDLE] =
+		SMF_CREATE_STATE(NULL, canopen_sdo_server_state_idle_run, NULL, NULL, NULL),
+	[CANOPEN_SDO_SERVER_STATE_DOWNLOAD] =
+		SMF_CREATE_STATE(NULL, NULL, NULL, NULL, NULL),
+	[CANOPEN_SDO_SERVER_STATE_UPLOAD] =
+		SMF_CREATE_STATE(NULL, NULL, NULL, NULL, NULL),
+	[CANOPEN_SDO_SERVER_STATE_BLOCK_DOWNLOAD] =
+		SMF_CREATE_STATE(NULL, NULL, NULL, NULL, NULL),
+	[CANOPEN_SDO_SERVER_STATE_BLOCK_UPLOAD] =
+		SMF_CREATE_STATE(NULL, NULL, NULL, NULL, NULL),
+};
+
 static void canopen_sdo_server_request_callback(const struct device *can, struct can_frame *frame,
 						void *user_data)
 {
@@ -124,13 +152,16 @@ int canopen_sdo_server_init(struct canopen_sdo_server *server, uint8_t sdo_numbe
 	struct can_filter filter;
 	int err;
 
-	if (sdo_number < SDO_NUMBER_MIN || sdo_number > SDO_NUMBER_MAX) {
+	if (sdo_number < CANOPEN_SDO_NUMBER_MIN || sdo_number > CANOPEN_SDO_NUMBER_MAX) {
 		LOG_ERR("invalid SDO number %d", sdo_number);
 		return -EINVAL;
 	}
 
 	server->sdo_number = sdo_number;
 	server->can = can;
+
+	/* TODO: move to canopen_sdo_server_enable() */
+	smf_set_initial(SMF_CTX(server), &canopen_sdo_server_states[CANOPEN_SDO_SERVER_STATE_IDLE]);
 
 	/* TODO: obtain COB-ID from OD */
 	/* TODO: check if COB-ID is enabled/"exists" */
