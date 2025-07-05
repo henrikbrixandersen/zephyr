@@ -16,6 +16,7 @@
  */
 
 #include <zephyr/device.h>
+#include <zephyr/smf.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -90,15 +91,27 @@ extern "C" {
 
 /** @} */
 
+/**
+ * @brief Minimum allowed value for a CANopen SDO number
+ */
+#define CANOPEN_SDO_NUMBER_MIN 1
+
+/**
+ * @brief Maximum allowed value for a CANopen SDO number
+ */
+#define CANOPEN_SDO_NUMBER_MAX 128
+
 /** @brief CANopen Service Data Object (SDO) server
  *
  * This type is opaque. Member data should not be accessed directly by the application.
  */
 struct canopen_sdo_server {
-	/** SDO number (1 to 128). */
-	uint8_t sdo_number;
+	/** State machine framework context (needs to be first). */
+	struct smf_ctx ctx;
 	/** Associated CAN interface. */
 	const struct device *can;
+	/** SDO number (1 to 128). */
+	uint8_t sdo_number;
 };
 
 /**
