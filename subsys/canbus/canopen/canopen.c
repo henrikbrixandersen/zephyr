@@ -52,7 +52,7 @@ int canopen_init(struct canopen *co, const struct canopen_od *od, const struct d
 	for (int i = 0; i < co->num_sdo_servers; i++) {
 		uint8_t sdo_number = i + 1U;
 
-		err = canopen_sdo_server_init(&co->sdo_servers[i], sdo_number, can);
+		err = canopen_sdo_server_init(&co->sdo_servers[i], work_q, can, sdo_number);
 		if (err != 0) {
 			LOG_ERR("failed to initialize CANopen SDO server %d (err %d)", sdo_number,
 				err);

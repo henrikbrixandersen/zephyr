@@ -89,9 +89,25 @@ config CANOPEN_OD_INFO
 
 config CANOPEN_NMT_EVENT_MSGQ_SIZE
 	int "Network Management (NMT) event message queue size"
+	range 1 $(UINT32_MAX)
 	default 10
 	help
 	  Number of per-instance NMT events that can be queued for the finite-state machine.
+
+config CANOPEN_SDO_REQUEST_MSGQ_SIZE
+	int "Service Data Object (SDO) request message queue size"
+	range 1 $(UINT32_MAX)
+	default 3
+	help
+	  Number of per-instance SDO requests that can be queued for the SDO server protocol engine.
+
+	  Since SDO is a confirmed service (using a request/response protocol between one SDO client
+	  and one SDO server), a node on a well-behaved CANopen network will only require one SDO
+	  request to be enqueued at any point in time.
+
+	  However, if multiple SDO clients attempt to access the same SDO server simultaneously, the
+	  protocol engine needs to be able to enqueue multiple requests in order to properly abort
+	  the conflicting SDO requests.
 
 endif # CANOPEN_STACK_NATIVE
 
