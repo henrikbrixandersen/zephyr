@@ -471,22 +471,19 @@ static void canopen_nmt_eventq_triggered_work_handler(struct k_work *work)
 {
 	struct k_work_poll *pwork = CONTAINER_OF(work, struct k_work_poll, work);
 	struct canopen_nmt *nmt = CONTAINER_OF(pwork, struct canopen_nmt, eventq_work);
-	canopen_nmt_event_t event;
 	int err;
 
-	err = k_msgq_get(&nmt->eventq, &event, K_FOREVER);
+	err = k_msgq_get(&nmt->eventq, &nmt->event, K_FOREVER);
 	if (err != 0) {
 		LOG_ERR("failed to get event from queue (err %d)", err);
 		goto resubmit;
 	}
 
-	if (event == CANOPEN_NMT_EVENT_POWER_ON) {
+	if (nmt->event == CANOPEN_NMT_EVENT_POWER_ON) {
 		/* CiA 301, figure 48, transition (1) */
 		smf_set_initial(SMF_CTX(nmt),
 				&canopen_nmt_states[CANOPEN_NMT_STATE_INITIALISATION]);
 	} else {
-		nmt->event = event;
-
 		err = smf_run_state(SMF_CTX(nmt));
 		if (err != 0) {
 			LOG_ERR("NMT finite-state machine terminated (err %d)", err);
@@ -556,6 +553,7 @@ int canopen_nmt_init(struct canopen_nmt *nmt, struct k_work_q *work_q, const str
 
 	__ASSERT_NO_MSG(nmt != NULL);
 	__ASSERT_NO_MSG(work_q != NULL);
+	__ASSERT_NO_MSG(can != NULL);
 
 	if (node_id < CANOPEN_NODE_ID_MIN || node_id > CANOPEN_NODE_ID_MAX) {
 		LOG_ERR("invalid node-ID %d", node_id);

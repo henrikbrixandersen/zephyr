@@ -16,6 +16,7 @@
  */
 
 #include <zephyr/device.h>
+#include <zephyr/kernel.h>
 #include <zephyr/smf.h>
 
 #ifdef __cplusplus
@@ -101,6 +102,15 @@ extern "C" {
  */
 #define CANOPEN_SDO_NUMBER_MAX 128
 
+/** @cond INTERNAL_HIDDEN */
+/**
+ * @brief Internal representation of a CANopen SDO request.
+ */
+struct canopen_sdo_request {
+	uint8_t data[8];
+};
+/** @endcond */
+
 /** @brief CANopen Service Data Object (SDO) server
  *
  * This type is opaque. Member data should not be accessed directly by the application.
@@ -112,6 +122,19 @@ struct canopen_sdo_server {
 	const struct device *can;
 	/** SDO number (1 to 128). */
 	uint8_t sdo_number;
+	/** Request queue buffer. */
+	char requestq_buf[sizeof(struct canopen_sdo_request) *
+			  CONFIG_CANOPEN_SDO_REQUEST_MSGQ_SIZE];
+	/** Current request. */
+	struct canopen_sdo_request request;
+	/** Request queue. */
+	struct k_msgq requestq;
+	/** State machine processing work queue. */
+	struct k_work_q *work_q;
+	/** Request queue processing work queue item. */
+	struct k_work_poll requestq_work;
+	/** Request queue polling events. */
+	struct k_poll_event requestq_poll_events[1];
 };
 
 /**
@@ -121,14 +144,15 @@ struct canopen_sdo_server {
  * functions.
  *
  * @param server Pointer to the CANopen SDO server.
- * @param sdo_number SDO number (1 to 128).
+ * @param work_q Pointer to the work queue to be used by the CANopen SDO server.
  * @param can Pointer to the CAN controller device instance.
+ * @param sdo_number SDO number (1 to 128).
  * @retval 0 on success.
  * @retval -EINVAL if the provided SDO number is invalid.
  * @retval -EIO if configuration of the CAN device failed.
  */
-int canopen_sdo_server_init(struct canopen_sdo_server *server, uint8_t sdo_number,
-			    const struct device *can);
+int canopen_sdo_server_init(struct canopen_sdo_server *server, struct k_work_q *work_q,
+			    const struct device *can, uint8_t sdo_number);
 
 /**
  * @brief Get the description of a CANopen SDO abort code
