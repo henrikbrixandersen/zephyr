@@ -7,8 +7,10 @@
 #include <zephyr/canbus/canopen.h>
 #include <zephyr/canbus/canopen/nmt.h>
 #include <zephyr/canbus/canopen/sdo.h>
+#include <zephyr/device.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/__assert.h>
 
 LOG_MODULE_REGISTER(canopen, CONFIG_CANOPEN_LOG_LEVEL);
 
@@ -22,6 +24,10 @@ int canopen_init(struct canopen *co, const struct canopen_od *od, const struct d
 {
 	struct k_work_q *work_q;
 	int err;
+
+	__ASSERT_NO_MSG(co != NULL);
+	__ASSERT_NO_MSG(od != NULL);
+	__ASSERT_NO_MSG(can != NULL);
 
 #ifdef CONFIG_CANOPEN_USE_DEDICATED_WORKQUEUE
 	static const struct k_work_queue_config cfg = {
@@ -42,6 +48,11 @@ int canopen_init(struct canopen *co, const struct canopen_od *od, const struct d
 #endif /* !CONFIG_CANOPEN_USE_DEDICATED_WORKQUEUE */
 
 	co->od = od;
+
+	if (!device_is_ready(can)) {
+		LOG_ERR("CAN controller %s not ready", can->name);
+		return -ENODEV;
+	}
 
 	err = canopen_nmt_init(&co->nmt, work_q, can, node_id);
 	if (err != 0) {
