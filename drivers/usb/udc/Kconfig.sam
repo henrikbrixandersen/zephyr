@@ -1,0 +1,30 @@
+# Copyright (c) 2025 Henrik Brix Andersen <henrik@brixandersen.dk>
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config UDC_SAM_USBHS
+	bool "Driver for SAM family USB HS device controller"
+	default y
+	depends on DT_HAS_ATMEL_SAM_USBHS_ENABLED
+	select UDC_DRIVER_HAS_HIGH_SPEED_SUPPORT
+	select PINCTRL
+	select SYS_MEM_BLOCKS # TODO: needed?
+	select EVENTS
+	help
+	  Driver for SAM family USB HS device controller.
+
+if UDC_SAM_USBHS
+
+config UDC_SAM_USBHS_STACK_SIZE
+	int "UDC controller driver internal thread stack size"
+	default 512
+	help
+	  Device controller driver internal thread stack size.
+
+config UDC_SAM_USBHS_THREAD_PRIORITY
+	int "UDC controller driver thread priority"
+	default 8
+	help
+	  Device controller driver thread priority.
+
+endif # UDC_SAM_USBHS
