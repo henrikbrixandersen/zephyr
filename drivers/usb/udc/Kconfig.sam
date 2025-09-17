@@ -7,8 +7,6 @@ config UDC_SAM_USBHS
 	default y
 	depends on DT_HAS_ATMEL_SAM_USBHS_ENABLED
 	select UDC_DRIVER_HAS_HIGH_SPEED_SUPPORT
-	select PINCTRL
-	select SYS_MEM_BLOCKS # TODO: needed?
 	select EVENTS
 	help
 	  Driver for SAM family USB HS device controller.
