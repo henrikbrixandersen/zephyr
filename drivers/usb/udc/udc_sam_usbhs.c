@@ -1,27 +1,8 @@
 /*
  * Copyright (c) 2025 Henrik Brix Andersen <henrik@brixandersen.dk>
- * Copyright (c) 2023 Nordic Semiconductor ASA
+ * Copyright (c) 2018 Aurelien Jarno <aurelien@aurel32.net>
  *
  * SPDX-License-Identifier: Apache-2.0
- */
-
-/*
- * USB device controller (UDC) driver skeleton
- *
- * This is a skeleton for a device controller driver using the UDC API.
- * Please use it as a starting point for a driver implementation for your
- * USB device controller. Maintaining a common style, terminology and
- * abbreviations will allow us to speed up reviews and reduce maintenance.
- * Copy UDC driver skeleton, remove all unrelated comments and replace the
- * copyright notice with your own.
- *
- * Typically, a driver implementation contains only a single source file,
- * but the large list of e.g. register definitions should be in a separate
- * .h file.
- *
- * If you want to define a helper macro, check if there is something similar
- * in include/zephyr/sys/util.h or include/zephyr/usb/usb_ch9.h that you can use.
- * Please keep all identifiers and logging messages concise and clear.
  */
 
 #include "udc_common.h"
@@ -30,22 +11,24 @@
 #include <stdio.h>
 
 #include <zephyr/kernel.h>
+#include <zephyr/drivers/clock_control/atmel_sam_pmc.h>
 #include <zephyr/drivers/usb/udc.h>
+#include <soc.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(udc_sam_usbhs, CONFIG_UDC_DRIVER_LOG_LEVEL);
 
-/*
- * Structure for holding controller configuration items that can remain in
- * non-volatile memory. This is usually accessed as
- *   const struct udc_sam_usbhs_config *config = dev->config;
- */
 struct udc_sam_usbhs_config {
+	Usbhs *base;
+	mem_addr_t dpram;
+	struct atmel_sam_pmc_config clock_cfg;
 	size_t num_of_eps;
 	struct udc_ep_config *ep_cfg_in;
 	struct udc_ep_config *ep_cfg_out;
-	void (*make_thread)(const struct device *dev);
 	int speed_idx;
+	void (*make_thread)(const struct device *dev);
+	void (*irq_enable_func)(void);
+	void (*irq_disable_func)(void);
 };
 
 /*
@@ -55,6 +38,10 @@ struct udc_sam_usbhs_config {
  */
 struct udc_sam_usbhs_data {
 	struct k_thread thread_data;
+
+	struct k_event events;
+	atomic_t xfer_new;
+	atomic_t xfer_finished;
 };
 
 /*
@@ -65,12 +52,23 @@ struct udc_sam_usbhs_data {
  */
 static ALWAYS_INLINE void udc_sam_usbhs_thread_handler(void *const arg)
 {
-	const struct device *dev = (const struct device *)arg;
+	/*const struct device *dev = (const struct device *)arg;*/
 
-	LOG_DBG("Driver %p thread started", dev);
-	while (true) {
-		k_msleep(1000);
-	}
+	/* TODO */
+	k_msleep(1000);
+}
+
+static void udc_sam_usbhs_isr_handler(const struct device *dev)
+{
+	const struct udc_sam_usbhs_config *config = dev->config;
+	Usbhs *const base = config->base;
+	uint32_t sr;
+
+	sr = base->USBHS_DEVISR;
+	base->USBHS_DEVICR = sr;
+
+	/* TODO */
+	LOG_INF("isr: 0x%08x", sr);
 }
 
 /*
@@ -80,14 +78,15 @@ static ALWAYS_INLINE void udc_sam_usbhs_thread_handler(void *const arg)
  * in a single location. Please refer to existing driver implementations
  * for examples.
  */
-static int udc_sam_usbhs_ep_enqueue(const struct device *dev,
-				   struct udc_ep_config *const cfg,
-				   struct net_buf *buf)
+static int udc_sam_usbhs_ep_enqueue(const struct device *dev, struct udc_ep_config *const ep_cfg,
+				    struct net_buf *buf)
 {
 	LOG_DBG("%p enqueue %p", dev, buf);
-	udc_buf_put(cfg, buf);
+	udc_buf_put(ep_cfg, buf);
 
-	if (cfg->stat.halted) {
+	/* TODO */
+
+	if (ep_cfg->stat.halted) {
 		/*
 		 * It is fine to enqueue a transfer for a halted endpoint,
 		 * you need to make sure that transfers are retriggered when
@@ -98,7 +97,7 @@ static int udc_sam_usbhs_ep_enqueue(const struct device *dev,
 		 * Although struct udc_ep_config uses address to be unambiguous
 		 * in its context.
 		 */
-		LOG_DBG("ep 0x%02x halted", cfg->addr);
+		LOG_DBG("ep 0x%02x halted", ep_cfg->addr);
 		return 0;
 	}
 
@@ -112,18 +111,19 @@ static int udc_sam_usbhs_ep_enqueue(const struct device *dev,
  * ECONNABORTED as the request result.
  * It is up to the request owner to clean up or reuse the buffer.
  */
-static int udc_sam_usbhs_ep_dequeue(const struct device *dev,
-				   struct udc_ep_config *const cfg)
+static int udc_sam_usbhs_ep_dequeue(const struct device *dev, struct udc_ep_config *const ep_cfg)
 {
 	unsigned int lock_key;
 	struct net_buf *buf;
 
 	lock_key = irq_lock();
 
-	buf = udc_buf_get_all(cfg);
+	buf = udc_buf_get_all(ep_cfg);
 	if (buf) {
 		udc_submit_ep_event(dev, buf, -ECONNABORTED);
 	}
+
+	/* TODO */
 
 	irq_unlock(lock_key);
 
@@ -135,10 +135,11 @@ static int udc_sam_usbhs_ep_dequeue(const struct device *dev,
  * This is called in the context of udc_ep_enable() or udc_ep_enable_internal(),
  * the latter of which may be used by the driver to enable control endpoints.
  */
-static int udc_sam_usbhs_ep_enable(const struct device *dev,
-				  struct udc_ep_config *const cfg)
+static int udc_sam_usbhs_ep_enable(const struct device *dev, struct udc_ep_config *const ep_cfg)
 {
-	LOG_DBG("Enable ep 0x%02x", cfg->addr);
+	LOG_DBG("Enable ep 0x%02x", ep_cfg->addr);
+
+	/* TODO */
 
 	return 0;
 }
@@ -147,54 +148,49 @@ static int udc_sam_usbhs_ep_enable(const struct device *dev,
  * Opposite function to udc_sam_usbhs_ep_enable(). udc_ep_disable_internal()
  * may be used by the driver to disable control endpoints.
  */
-static int udc_sam_usbhs_ep_disable(const struct device *dev,
-				   struct udc_ep_config *const cfg)
+static int udc_sam_usbhs_ep_disable(const struct device *dev, struct udc_ep_config *const ep_cfg)
 {
-	LOG_DBG("Disable ep 0x%02x", cfg->addr);
+	LOG_DBG("Disable ep 0x%02x", ep_cfg->addr);
+
+	/* TODO */
 
 	return 0;
 }
 
-/* Halt endpoint. Halted endpoint should respond with a STALL handshake. */
-static int udc_sam_usbhs_ep_set_halt(const struct device *dev,
-				    struct udc_ep_config *const cfg)
+static int udc_sam_usbhs_ep_set_halt(const struct device *dev, struct udc_ep_config *const ep_cfg)
 {
-	LOG_DBG("Set halt ep 0x%02x", cfg->addr);
+	const struct udc_sam_usbhs_config *config = dev->config;
+	uint8_t ep_idx = USB_EP_GET_IDX(ep_cfg->addr);
+	Usbhs *const base = config->base;
 
-	/*
-	 * NOTE: udc_ep_clear_halt() is not called for control endpoints.
-	 *
-	 * When an endpoint is halted or a control pipe request is not
-	 * supported, endpoint responds with a STALL handshake packet. The
-	 * specification distinguishes between a functional stall and a
-	 * protocol stall. The stack calls udc_ep_set_halt() to set a
-	 * functional or protocol stall. A protocol stall is unique to control
-	 * pipes and terminates at the beginning of the next control transfer.
-	 * Although a control pipe may support functional stall, it is not
-	 * recommended by the specification. The stack does not call
-	 * udc_ep_clear_halt() for control endpoints.
-	 *
-	 * How a driver clears a protocol stall depends on the implementation.
-	 * Some controllers automatically clear the protocol stall condition
-	 * when the next setup packet arrives, while others require software
-	 * intervention.
-	 */
-	if (USB_EP_GET_IDX(cfg->addr) != 0U) {
-		cfg->stat.halted = true;
+	base->USBHS_DEVEPTIER[ep_idx] = USBHS_DEVEPTIER_CTRL_STALLRQS;
+
+	LOG_DBG("Set halt ep 0x%02x", ep_cfg->addr);
+	if (ep_idx != 0U) {
+		ep_cfg->stat.halted = true;
 	}
 
 	return 0;
 }
 
-/*
- * Opposite to halt endpoint. If there are requests in the endpoint queue,
- * the next transfer should be prepared.
- */
-static int udc_sam_usbhs_ep_clear_halt(const struct device *dev,
-				      struct udc_ep_config *const cfg)
+static int udc_sam_usbhs_ep_clear_halt(const struct device *dev, struct udc_ep_config *const ep_cfg)
 {
-	LOG_DBG("Clear halt ep 0x%02x", cfg->addr);
-	cfg->stat.halted = false;
+	const struct udc_sam_usbhs_config *config = dev->config;
+	uint8_t ep_idx = USB_EP_GET_IDX(ep_cfg->addr);
+	Usbhs *const base = config->base;
+
+	if (ep_idx == 0) {
+		return 0;
+	}
+
+	base->USBHS_DEVEPTIDR[ep_idx] = USBHS_DEVEPTIDR_CTRL_STALLRQC;
+
+	/* TODO: check endpoint queue for pending request, post event */
+
+	LOG_DBG("Clear halt ep 0x%02x", ep_cfg->addr);
+	ep_cfg->stat.halted = false;
+
+	/* TODO */
 
 	return 0;
 }
@@ -203,26 +199,100 @@ static int udc_sam_usbhs_set_address(const struct device *dev, const uint8_t add
 {
 	LOG_DBG("Set new address %u for %p", addr, dev);
 
+	/* TODO */
+
 	return 0;
 }
 
 static int udc_sam_usbhs_host_wakeup(const struct device *dev)
 {
+	const struct udc_sam_usbhs_config *config = dev->config;
+	Usbhs *const base = config->base;
+
 	LOG_DBG("Remote wakeup from %p", dev);
+	base->USBHS_DEVCTRL |= USBHS_DEVCTRL_RMWKUP;
 
 	return 0;
 }
 
-/* Return actual USB device speed */
 static enum udc_bus_speed udc_sam_usbhs_device_speed(const struct device *dev)
 {
-	struct udc_data *data = dev->data;
+	const struct udc_sam_usbhs_config *config = dev->config;
+	Usbhs *const base = config->base;
 
-	return data->caps.hs ? UDC_BUS_SPEED_HS : UDC_BUS_SPEED_FS;
+	switch (base->USBHS_SR & USBHS_SR_SPEED_Msk) {
+	case USBHS_SR_SPEED_FULL_SPEED:
+		return UDC_BUS_SPEED_FS;
+	case USBHS_SR_SPEED_HIGH_SPEED:
+		return UDC_BUS_SPEED_HS;
+	case USBHS_SR_SPEED_LOW_SPEED:
+		__ASSERT(false, "Low speed mode not supported");
+		__fallthrough;
+	default:
+		return UDC_BUS_UNKNOWN;
+	}
 }
 
 static int udc_sam_usbhs_enable(const struct device *dev)
 {
+	const struct udc_sam_usbhs_config *config = dev->config;
+	Usbhs *const base = config->base;
+	int err;
+
+	/* TODO: follow paragraph 38.5.2 */
+
+	/* Enable USBHS clock in PMC */
+	err = clock_control_on(SAM_DT_PMC_CONTROLLER, (clock_control_subsys_t)&config->clock_cfg);
+	if (err != 0) {
+		return err;
+	}
+
+	/* Reset the controller */
+	base->USBHS_CTRL = USBHS_CTRL_UIMOD | USBHS_CTRL_FRZCLK | USBHS_CTRL_VBUSHWC;
+
+	/* Start the USB PLL */
+	PMC->CKGR_UCKR |= CKGR_UCKR_UPLLEN;
+
+	/* Wait for it to be ready */
+	while (!(PMC->PMC_SR & PMC_SR_LOCKU)) {
+		k_yield();
+	}
+
+	/* TODO: use max speed property here instead */
+	/* In low power mode, provide a 48MHz clock instead of the 480MHz one */
+	if ((base->USBHS_DEVCTRL & USBHS_DEVCTRL_SPDCONF_Msk) == USBHS_DEVCTRL_SPDCONF_LOW_POWER) {
+		/* Configure the USB_48M clock to be UPLLCK/10 */
+		PMC->PMC_MCKR &= ~PMC_MCKR_UPLLDIV2;
+		PMC->PMC_USB = PMC_USB_USBDIV(9) | PMC_USB_USBS;
+
+		/* Enable USB_48M clock */
+		PMC->PMC_SCER |= PMC_SCER_USBCLK;
+	}
+
+	/* Unfreeze the clock */
+	base->USBHS_CTRL = USBHS_CTRL_UIMOD | USBHS_CTRL_USBE | USBHS_CTRL_VBUSHWC;
+
+	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_OUT, USB_EP_TYPE_CONTROL, 64, 0)) {
+		LOG_ERR("Failed to enable control endpoint");
+		return -EIO;
+	}
+
+	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_IN, USB_EP_TYPE_CONTROL, 64, 0)) {
+		LOG_ERR("Failed to enable control endpoint");
+		return -EIO;
+	}
+
+	/* Enable device interrupts */
+	base->USBHS_DEVIER = USBHS_DEVIER_EORSMES | USBHS_DEVIER_EORSTES | USBHS_DEVIER_SUSPES;
+
+	if (IS_ENABLED(CONFIG_UDC_ENABLE_SOF)) {
+		base->USBHS_DEVIER = USBHS_DEVIER_SOFES;
+	}
+
+	/* Attach the device */
+	base->USBHS_DEVCTRL &= ~USBHS_DEVCTRL_DETACH;
+
+	config->irq_enable_func();
 	LOG_DBG("Enable device %p", dev);
 
 	return 0;
@@ -230,40 +300,17 @@ static int udc_sam_usbhs_enable(const struct device *dev)
 
 static int udc_sam_usbhs_disable(const struct device *dev)
 {
-	LOG_DBG("Disable device %p", dev);
+	const struct udc_sam_usbhs_config *config = dev->config;
+	Usbhs *const base = config->base;
+	int err;
 
-	return 0;
-}
+	/* TODO: follow paragraph 38.5.2 */
 
-/*
- * Prepare and configure most of the parts, if the controller has a way
- * of detecting VBUS activity it should be enabled here.
- * Only udc_sam_usbhs_enable() makes device visible to the host.
- */
-static int udc_sam_usbhs_init(const struct device *dev)
-{
-	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_OUT,
-				   USB_EP_TYPE_CONTROL, 64, 0)) {
-		LOG_ERR("Failed to enable control endpoint");
-		return -EIO;
-	}
+	config->irq_disable_func();
 
-	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_IN,
-				   USB_EP_TYPE_CONTROL, 64, 0)) {
-		LOG_ERR("Failed to enable control endpoint");
-		return -EIO;
-	}
+	/* Detach the device */
+	base->USBHS_DEVCTRL |= USBHS_DEVCTRL_DETACH;
 
-	if (IS_ENABLED(CONFIG_UDC_ENABLE_SOF)) {
-		LOG_INF("Enable SOF interrupt");
-	}
-
-	return 0;
-}
-
-/* Shut down the controller completely */
-static int udc_sam_usbhs_shutdown(const struct device *dev)
-{
 	if (udc_ep_disable_internal(dev, USB_CONTROL_EP_OUT)) {
 		LOG_ERR("Failed to disable control endpoint");
 		return -EIO;
@@ -274,29 +321,60 @@ static int udc_sam_usbhs_shutdown(const struct device *dev)
 		return -EIO;
 	}
 
+	/* Disable USB_48M clock */
+	PMC->PMC_SCER &= ~PMC_SCER_USBCLK;
+
+	/* Disable the USB PLL */
+	PMC->CKGR_UCKR &= ~CKGR_UCKR_UPLLEN;
+
+	/* Disable the USB controller and freeze the clock */
+	base->USBHS_CTRL = USBHS_CTRL_UIMOD | USBHS_CTRL_FRZCLK | USBHS_CTRL_VBUSHWC;
+
+	/* Disable USBHS clock in PMC */
+	err = clock_control_off(SAM_DT_PMC_CONTROLLER, (clock_control_subsys_t)&config->clock_cfg);
+	if (err != 0) {
+		return err;
+	}
+
+	LOG_DBG("Disable device %p", dev);
+
 	return 0;
 }
 
 /*
- * This is called once to initialize the controller and endpoints
- * capabilities, and register endpoint structures.
+ * Nothing to do here as the controller does not support VBUS state change
+ * detection and there is nothing to initialize in the controller to do this.
  */
+static int udc_sam_usbhs_init(const struct device *dev)
+{
+	LOG_DBG("Init device %s", dev->name);
+
+	return 0;
+}
+
+static int udc_sam_usbhs_shutdown(const struct device *dev)
+{
+	LOG_DBG("Shutdown device %s", dev->name);
+
+	return 0;
+}
+
 static int udc_sam_usbhs_driver_preinit(const struct device *dev)
 {
 	const struct udc_sam_usbhs_config *config = dev->config;
+	struct udc_sam_usbhs_data *priv = udc_get_private(dev);
 	struct udc_data *data = dev->data;
 	uint16_t mps = 1023;
 	int err;
 
-	/*
-	 * You do not need to initialize it if your driver does not use
-	 * udc_lock_internal() / udc_unlock_internal(), but implements its
-	 * own mechanism.
-	 */
 	k_mutex_init(&data->mutex);
+	k_event_init(&priv->events);
+	atomic_clear(&priv->xfer_new);
+	atomic_clear(&priv->xfer_finished);
 
 	data->caps.rwup = true;
 	data->caps.mps0 = UDC_MPS0_64;
+
 	if (config->speed_idx == 2) {
 		data->caps.hs = true;
 		mps = 1024;
@@ -312,6 +390,7 @@ static int udc_sam_usbhs_driver_preinit(const struct device *dev)
 			config->ep_cfg_out[i].caps.interrupt = 1;
 			config->ep_cfg_out[i].caps.iso = 1;
 			config->ep_cfg_out[i].caps.mps = mps;
+			config->ep_cfg_out[i].caps.high_bandwidth = 1;
 		}
 
 		config->ep_cfg_out[i].addr = USB_EP_DIR_OUT | i;
@@ -332,6 +411,7 @@ static int udc_sam_usbhs_driver_preinit(const struct device *dev)
 			config->ep_cfg_in[i].caps.interrupt = 1;
 			config->ep_cfg_in[i].caps.iso = 1;
 			config->ep_cfg_in[i].caps.mps = mps;
+			config->ep_cfg_in[i].caps.high_bandwidth = 1;
 		}
 
 		config->ep_cfg_in[i].addr = USB_EP_DIR_IN | i;
@@ -350,19 +430,16 @@ static int udc_sam_usbhs_driver_preinit(const struct device *dev)
 
 static void udc_sam_usbhs_lock(const struct device *dev)
 {
+	k_sched_lock();
 	udc_lock_internal(dev, K_FOREVER);
 }
 
 static void udc_sam_usbhs_unlock(const struct device *dev)
 {
 	udc_unlock_internal(dev);
+	k_sched_unlock();
 }
 
-/*
- * UDC API structure.
- * Note, you do not need to implement basic checks, these are done by
- * the UDC common layer udc_common.c
- */
 static const struct udc_api udc_sam_usbhs_api = {
 	.lock = udc_sam_usbhs_lock,
 	.unlock = udc_sam_usbhs_unlock,
@@ -383,58 +460,65 @@ static const struct udc_api udc_sam_usbhs_api = {
 
 #define DT_DRV_COMPAT atmel_sam_usbhs
 
-/*
- * A UDC driver should always be implemented as a multi-instance
- * driver, even if your platform does not require it.
- */
-#define UDC_SAM_USBHS_DEVICE_DEFINE(n)						\
-	K_THREAD_STACK_DEFINE(udc_sam_usbhs_stack_##n,				\
-			      CONFIG_UDC_SAM_USBHS_STACK_SIZE);			\
-										\
-	static void udc_sam_usbhs_thread_##n(void *dev, void *arg1, void *arg2)	\
-	{									\
-		udc_sam_usbhs_thread_handler(dev);				\
-	}									\
-										\
-	static void udc_sam_usbhs_make_thread_##n(const struct device *dev)	\
-	{									\
-		struct udc_sam_usbhs_data *priv = udc_get_private(dev);		\
-										\
-		k_thread_create(&priv->thread_data,				\
-				udc_sam_usbhs_stack_##n,			\
-				K_THREAD_STACK_SIZEOF(udc_sam_usbhs_stack_##n),	\
-				udc_sam_usbhs_thread_##n,			\
-				(void *)dev, NULL, NULL,			\
-				K_PRIO_COOP(CONFIG_UDC_SAM_USBHS_THREAD_PRIORITY),\
-				K_ESSENTIAL,					\
-				K_NO_WAIT);					\
-		k_thread_name_set(&priv->thread_data, dev->name);		\
-	}									\
-										\
-	static struct udc_ep_config						\
-		ep_cfg_out[DT_INST_PROP(n, num_bidir_endpoints)];		\
-	static struct udc_ep_config						\
-		ep_cfg_in[DT_INST_PROP(n, num_bidir_endpoints)];		\
-										\
-	static const struct udc_sam_usbhs_config udc_sam_usbhs_config_##n = {	\
-		.num_of_eps = DT_INST_PROP(n, num_bidir_endpoints),		\
-		.ep_cfg_in = ep_cfg_out,					\
-		.ep_cfg_out = ep_cfg_in,					\
-		.make_thread = udc_sam_usbhs_make_thread_##n,			\
-		.speed_idx = DT_ENUM_IDX(DT_DRV_INST(n), maximum_speed),	\
-	};									\
-										\
-	static struct udc_sam_usbhs_data udc_priv_##n = {			\
-	};									\
-										\
-	static struct udc_data udc_data_##n = {					\
-		.mutex = Z_MUTEX_INITIALIZER(udc_data_##n.mutex),		\
-		.priv = &udc_priv_##n,						\
-	};									\
-										\
-	DEVICE_DT_INST_DEFINE(n, udc_sam_usbhs_driver_preinit, NULL,		\
-			      &udc_data_##n, &udc_sam_usbhs_config_##n,		\
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	\
-			      &udc_sam_usbhs_api);
+#define UDC_SAM_USBHS_DEVICE_DEFINE(n)                                                             \
+	K_THREAD_STACK_DEFINE(udc_sam_usbhs_stack_##n, CONFIG_UDC_SAM_USBHS_STACK_SIZE);           \
+                                                                                                   \
+	static void udc_sam_usbhs_irq_enable_##n(void)                                             \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), udc_sam_usbhs_isr_handler,  \
+			    DEVICE_DT_INST_GET(n), 0);                                             \
+		irq_enable(DT_INST_IRQN(n));                                                       \
+	}                                                                                          \
+                                                                                                   \
+	static void udc_sam_usbhs_irq_disable_##n(void)                                            \
+	{                                                                                          \
+		irq_disable(DT_INST_IRQN(n));                                                      \
+	}                                                                                          \
+                                                                                                   \
+	static void udc_sam_usbhs_thread_##n(void *dev, void *arg1, void *arg2)                    \
+	{                                                                                          \
+		while (true) {                                                                     \
+			udc_sam_usbhs_thread_handler(dev);                                         \
+		}                                                                                  \
+	}                                                                                          \
+                                                                                                   \
+	static void udc_sam_usbhs_make_thread_##n(const struct device *dev)                        \
+	{                                                                                          \
+		struct udc_sam_usbhs_data *priv = udc_get_private(dev);                            \
+                                                                                                   \
+		k_thread_create(&priv->thread_data, udc_sam_usbhs_stack_##n,                       \
+				K_THREAD_STACK_SIZEOF(udc_sam_usbhs_stack_##n),                    \
+				udc_sam_usbhs_thread_##n, (void *)dev, NULL, NULL,                 \
+				K_PRIO_COOP(CONFIG_UDC_SAM_USBHS_THREAD_PRIORITY), K_ESSENTIAL,    \
+				K_NO_WAIT);                                                        \
+		k_thread_name_set(&priv->thread_data, dev->name);                                  \
+	}                                                                                          \
+                                                                                                   \
+	static struct udc_ep_config ep_cfg_out[DT_INST_PROP(n, num_bidir_endpoints)];              \
+	static struct udc_ep_config ep_cfg_in[DT_INST_PROP(n, num_bidir_endpoints)];               \
+                                                                                                   \
+	static const struct udc_sam_usbhs_config udc_sam_usbhs_config_##n = {                      \
+		.base = (Usbhs *)DT_INST_REG_ADDR_BY_NAME(n, usbhs),                               \
+		.dpram = DT_INST_REG_ADDR_BY_NAME(n, usbhs_ram),                                   \
+		.clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(n),                                         \
+		.num_of_eps = DT_INST_PROP(n, num_bidir_endpoints),                                \
+		.ep_cfg_in = ep_cfg_out,                                                           \
+		.ep_cfg_out = ep_cfg_in,                                                           \
+		.speed_idx = DT_ENUM_IDX(DT_DRV_INST(n), maximum_speed),                           \
+		.make_thread = udc_sam_usbhs_make_thread_##n,                                      \
+		.irq_enable_func = udc_sam_usbhs_irq_enable_##n,                                   \
+		.irq_disable_func = udc_sam_usbhs_irq_disable_##n,                                 \
+	};                                                                                         \
+                                                                                                   \
+	static struct udc_sam_usbhs_data udc_priv_##n;                                             \
+                                                                                                   \
+	static struct udc_data udc_data_##n = {                                                    \
+		.mutex = Z_MUTEX_INITIALIZER(udc_data_##n.mutex),                                  \
+		.priv = &udc_priv_##n,                                                             \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, udc_sam_usbhs_driver_preinit, NULL, &udc_data_##n,                \
+			      &udc_sam_usbhs_config_##n, POST_KERNEL,                              \
+			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &udc_sam_usbhs_api);
 
 DT_INST_FOREACH_STATUS_OKAY(UDC_SAM_USBHS_DEVICE_DEFINE)
