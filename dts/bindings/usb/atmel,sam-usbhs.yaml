@@ -8,10 +8,12 @@ compatible: "atmel,sam-usbhs"
 
 include:
   - name: usb-ep.yaml
-  - name: pinctrl-device.yaml
 
 properties:
   reg:
+    required: true
+
+  reg-names:
     required: true
 
   interrupts:
