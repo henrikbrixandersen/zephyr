@@ -205,7 +205,8 @@
 
 		usbhs: usbd@40038000 {
 			compatible = "atmel,sam-usbhs";
-			reg = <0x40038000 0x4000>;
+			reg = <0x40038000 0x4000>, <0xa0100000 0x100000>;
+			reg-names = "usbhs", "usbhs_ram";
 			interrupts = <34 0>;
 			interrupt-names = "usbhs";
 			maximum-speed = "high-speed";
