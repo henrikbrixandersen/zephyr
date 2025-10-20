@@ -12,10 +12,12 @@
 #include <string.h>
 #include <stdio.h>
 
-#include <zephyr/kernel.h>
+#include <zephyr/cache.h>
 #include <zephyr/drivers/clock_control/atmel_sam_pmc.h>
 #include <zephyr/drivers/usb/udc.h>
+#include <zephyr/kernel.h>
 #include <zephyr/sys/barrier.h>
+
 #include <soc.h>
 
 #include <zephyr/logging/log.h>
@@ -124,11 +126,11 @@ static inline void udc_sam_usbhs_ep_enable_interrupts(const struct device *dev, 
 	} else if (USB_EP_DIR_IS_OUT(ep)) {
 		eptier = USBHS_DEVEPTIER_RXOUTES_Msk;
 	} else {
-		/* Acknowledge FIFO empty interrupt */
-		base->USBHS_DEVEPTICR[ep_idx] = USBHS_DEVEPTICR_TXINIC;
 		eptier = USBHS_DEVEPTIER_TXINES_Msk;
 	}
 
+	/* Acknowledge FIFO empty interrupt */
+	base->USBHS_DEVEPTICR[ep_idx] = USBHS_DEVEPTICR_TXINIC;
 	base->USBHS_DEVEPTIER[ep_idx] = eptier;
 }
 
@@ -136,16 +138,30 @@ static void udc_sam_usbhs_fifo_data_read(const struct device *dev, uint8_t ep_id
 					 const size_t length)
 {
 	const struct udc_sam_usbhs_config *config = dev->config;
+	uint8_t *src = (uint8_t *)(config->dpram + (0x8000 * ep_idx));
 
-	memcpy(dest, (void *)(config->dpram + (0x8000 * ep_idx)), length);
+	LOG_ERR("reading %u bytes from FIFO", length);
+
+	(void)sys_cache_data_invd_range(src, length);
+	/* memcpy(dest, src, length); */
+	for (int i = 0; i < length; i++) {
+		*dest++ = *src++;
+	}
 }
 
 static void udc_sam_usbhs_fifo_data_write(const struct device *dev, uint8_t ep_idx, uint8_t *src,
 					 const size_t length)
 {
 	const struct udc_sam_usbhs_config *config = dev->config;
+	uint8_t *dest = (uint8_t *)(config->dpram + (0x8000 * ep_idx));
 
-	memcpy((void *)(config->dpram + (0x8000 * ep_idx)), src, length);
+	LOG_ERR("writing %u bytes to FIFO", length);
+
+	/* memcpy(dest, src, length); */
+	for (int i = 0; i < length; i++) {
+		*dest++ = *src++;
+	}
+	(void)sys_cache_data_flush_range(dest, length);
 }
 
 static int udc_sam_usbhs_prep_out(const struct device *dev, struct net_buf *const buf,
@@ -163,12 +179,13 @@ static int udc_sam_usbhs_prep_in(const struct device *dev, struct net_buf *const
 	const struct udc_sam_usbhs_config *config = dev->config;
 	uint8_t ep_idx = USB_EP_GET_IDX(ep_cfg->addr);
 	Usbhs *base = config->base;
+	uint16_t len = MIN(1024, buf->len);
 
 	/* TODO: determine len, etc. */
 	LOG_DBG("");
 
 	/* TODO: write from buf into FIFO */
-	udc_sam_usbhs_fifo_data_write(dev, ep_idx, buf->data, buf->len);
+	udc_sam_usbhs_fifo_data_write(dev, ep_idx, buf->data, len);
 
 	if (ep_idx == 0U) {
 		/* TODO: mark FIFO ready */
@@ -274,26 +291,26 @@ static int udc_sam_usbhs_handle_evt_din(const struct device *dev,
 		/* Update to next stage of control transfer */
 		udc_ctrl_update_stage(dev, buf);
 
-		if (udc_ctrl_stage_is_data_in(dev)) {
-			/*
-			 * s-in-[status] finished, release buffer.
-			 * Since the controller supports auto-status we cannot use
-			 * if (udc_ctrl_stage_is_status_out()) after state update.
-			 */
-			net_buf_unref(buf);
-		}
-
-		/* if (udc_ctrl_stage_is_status_out(dev)) { */
-		/* 	/\* IN transfer finished, submit buffer for status stage *\/ */
+		/* if (udc_ctrl_stage_is_data_in(dev)) { */
+		/* 	/\* */
+		/* 	 * s-in-[status] finished, release buffer. */
+		/* 	 * Since the controller supports auto-status we cannot use */
+		/* 	 * if (udc_ctrl_stage_is_status_out()) after state update. */
+		/* 	 *\/ */
 		/* 	net_buf_unref(buf); */
-
-		/* 	err = udc_sam_usbhs_ctrl_feed_dout(dev, 0); */
-		/* 	if (err == -ENOMEM) { */
-		/* 		udc_submit_ep_event(dev, buf, err); */
-		/* 	} else { */
-		/* 		return err; */
-		/* 	} */
 		/* } */
+
+		if (udc_ctrl_stage_is_status_out(dev)) {
+			/* IN transfer finished, submit buffer for status stage */
+			net_buf_unref(buf);
+
+			err = udc_sam_usbhs_ctrl_feed_dout(dev, 0);
+			if (err == -ENOMEM) {
+				udc_submit_ep_event(dev, buf, err);
+			} else {
+				return err;
+			}
+		}
 
 		return 0;
 	}
@@ -304,7 +321,12 @@ static int udc_sam_usbhs_handle_evt_din(const struct device *dev,
 static int udc_sam_usbhs_handle_evt_dout(const struct device *dev,
 					 struct udc_ep_config *const ep_cfg)
 {
+	const struct udc_sam_usbhs_config *config = dev->config;
+	uint8_t ep_idx = USB_EP_GET_IDX(ep_cfg->addr);
+	Usbhs *base = config->base;
 	struct net_buf *buf;
+	uint32_t deveptisr;
+	uint16_t byct;
 	int err = 0;
 
 	buf = udc_buf_get(ep_cfg);
@@ -313,8 +335,19 @@ static int udc_sam_usbhs_handle_evt_dout(const struct device *dev,
 		return -ENODATA;
 	}
 
-	/* TODO: read from FIFO into buf */
-	/* TODO: release bank */
+	if (ep_idx != 0U) {
+		deveptisr = base->USBHS_DEVEPTISR[ep_idx];
+		byct = FIELD_GET(USBHS_DEVEPTISR_BYCT_Msk, deveptisr);
+
+		/* TODO: determine len etc. */
+
+		net_buf_add(buf, byct);
+		udc_sam_usbhs_fifo_data_read(dev, ep_idx, buf->data, byct);
+
+		base->USBHS_DEVEPTIDR[ep_idx] |= USBHS_DEVEPTIDR_FIFOCONC;
+	} else {
+		/* TODO: anything to do here? */
+	}
 
 	udc_ep_set_busy(ep_cfg, false);
 
@@ -364,7 +397,7 @@ static void udc_sam_usbhs_handle_xfer_next(const struct device *dev,
 	}
 }
 
-static ALWAYS_INLINE void udc_sam_usbhs_thread_handler(const struct device *dev)
+static void udc_sam_usbhs_thread_handler(const struct device *dev)
 {
 	struct udc_sam_usbhs_data *const priv = udc_get_private(dev);
 	struct udc_ep_config *ep_cfg;
@@ -453,7 +486,9 @@ static void udc_sam_usbhs_handle_setup_irq(const struct device *dev, uint32_t de
 static void udc_sam_usbhs_handle_out_irq(const struct device *dev, const uint8_t ep,
 					 uint32_t deveptisr)
 {
+	struct udc_sam_usbhs_data *const priv = udc_get_private(dev);
 	struct udc_ep_config *ep_cfg = udc_get_ep_cfg(dev, ep);
+	uint8_t ep_idx = USB_EP_GET_IDX(ep_cfg->addr);
 	struct net_buf *buf;
 	uint16_t byct;
 
@@ -469,10 +504,18 @@ static void udc_sam_usbhs_handle_out_irq(const struct device *dev, const uint8_t
 	LOG_DBG("ISR ep 0x%02x byct %u room %u mps %u", ep, byct, net_buf_tailroom(buf),
 		udc_mps_ep_size(ep_cfg));
 
-	/* TODO: implement this */
+	/* TODO: determine length etc. */
 
-	/* TODO: if EP0, read FIFO into buf here */
-	/* TODO: else, ... */
+	if (ep == USB_CONTROL_EP_OUT) {
+		/* TODO: if EP0, read FIFO into buf here */
+		net_buf_add(buf, byct);
+		udc_sam_usbhs_fifo_data_read(dev, ep_idx, buf->data, byct);
+	} else {
+		/* TODO: else, defer memcpy to thread */
+	}
+
+	atomic_set_bit(&priv->xfer_finished, udc_sam_usbhs_ep_to_bnum(ep));
+	k_event_post(&priv->events, BIT(UDC_SAM_USBHS_EVT_XFER_FINISHED));
 }
 
 static void udc_sam_usbhs_handle_in_irq(const struct device *dev, const uint8_t ep,
@@ -1017,7 +1060,7 @@ static int udc_sam_usbhs_driver_preinit(const struct device *dev)
 	atomic_clear(&priv->xfer_finished);
 
 	data->caps.rwup = true;
-	data->caps.out_ack = true;
+	/* data->caps.out_ack = true; */
 	data->caps.addr_before_status = true;
 	data->caps.mps0 = UDC_MPS0_64;
 
@@ -1076,14 +1119,14 @@ static int udc_sam_usbhs_driver_preinit(const struct device *dev)
 
 static void udc_sam_usbhs_lock(const struct device *dev)
 {
-	k_sched_lock();
+//	k_sched_lock();
 	udc_lock_internal(dev, K_FOREVER);
 }
 
 static void udc_sam_usbhs_unlock(const struct device *dev)
 {
 	udc_unlock_internal(dev);
-	k_sched_unlock();
+//	k_sched_unlock();
 }
 
 static const struct udc_api udc_sam_usbhs_api = {
