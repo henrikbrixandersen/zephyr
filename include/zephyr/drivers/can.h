@@ -135,6 +135,8 @@ enum can_state {
 	CAN_STATE_BUS_OFF,
 	/** CAN controller is stopped and does not participate in CAN communication. */
 	CAN_STATE_STOPPED,
+	/** CAN controller is suspended. */
+	CAN_STATE_SUSPENDED,
 };
 
 /**

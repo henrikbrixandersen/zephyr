@@ -886,6 +886,7 @@ int can_mcan_get_state(const struct device *dev, enum can_state *state,
 			return err;
 		}
 
+		/* TODO: if (data->common.suspended) { ... } */
 		if (!data->common.started) {
 			*state = CAN_STATE_STOPPED;
 		} else if ((reg & CAN_MCAN_PSR_BO) != 0U) {

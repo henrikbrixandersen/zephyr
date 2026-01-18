@@ -258,6 +258,8 @@ static const char *can_shell_state_to_string(enum can_state state)
 		return "bus-off";
 	case CAN_STATE_STOPPED:
 		return "stopped";
+	case CAN_STATE_SUSPENDED:
+		return "suspended";
 	default:
 		return "unknown";
 	}

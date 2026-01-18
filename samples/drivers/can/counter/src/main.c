@@ -127,6 +127,8 @@ char *state_to_str(enum can_state state)
 		return "bus-off";
 	case CAN_STATE_STOPPED:
 		return "stopped";
+	case CAN_STATE_SUSPENDED:
+		return "suspended";
 	default:
 		return "unknown";
 	}

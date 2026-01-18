@@ -682,6 +682,10 @@ static int tcan4x5x_pm_control(const struct device *dev, enum pm_device_action a
 		 */
 		err = tcan4x5x_set_config_mode_sel(dev, CAN_TCAN4X5X_MODE_CONFIG_MODE_SEL_SLEEP,
 						   &reg);
+		if (err == 0) {
+			/* TODO: set internal state and call callback, if any */
+		}
+
 		return err;
 	case PM_DEVICE_ACTION_RESUME:
 		/* Wake up the device */
@@ -699,7 +703,12 @@ static int tcan4x5x_pm_control(const struct device *dev, enum pm_device_action a
 		}
 #endif
 		/* Enter normal mode */
-		return tcan4x5x_init_normal_mode(dev);
+		err = tcan4x5x_init_normal_mode(dev);
+		if (err == 0) {
+			/* TODO: set internal state and call callback, if any */
+		}
+
+		return err;
 	default:
 		break;
 	}
