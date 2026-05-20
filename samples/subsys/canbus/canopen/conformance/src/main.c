@@ -36,7 +36,7 @@ int main(void)
 	co.sdo_servers = &sdo_server;
 	co.num_sdo_servers = 1U;
 
-	err = canopen_init(&co, &objdict, can, 127U);
+	err = canopen_init(&co, &objdict, can, CONFIG_SAMPLE_CANOPEN_NODE_ID);
 	if (err != 0) {
 		LOG_ERR("failed to initialize the CANopen protocol stack (err %d)", err);
 		return err;

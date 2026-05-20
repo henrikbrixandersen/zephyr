@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-config CANOPEN_NODE_ID
+config SAMPLE_CANOPEN_NODE_ID
 	int "CANopen node-ID"
 	default 10
 	range 1 127
