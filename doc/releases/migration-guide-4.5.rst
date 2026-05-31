@@ -122,6 +122,13 @@ Clock Control
   RT11xx overlays should be updated using the mapping
   ``loop-div = clock-mult * 2`` and ``post-div = clock-div``.
 
+Controller Area Network (CAN)
+=============================
+
+* The Bosch M_CAN driver now solely uses RX FIFO0 for processing received CAN frames, ensuring these
+  are processed in the order received on the bus. Out-of-tree users may want to update any
+  ``bosch,mram-cfg`` devicetree property overrides to allocate all FIFO elements to RX FIFO0.
+
 Devicetree
 ==========
 
