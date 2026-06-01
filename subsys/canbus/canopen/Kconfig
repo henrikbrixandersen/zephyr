@@ -92,4 +92,9 @@ config CANOPEN_SDO_REQUEST_MSGQ_SIZE
 	  protocol engine needs to be able to enqueue multiple requests in order to properly abort
 	  the conflicting SDO requests.
 
+config CANOPEN_INDICATORS
+	bool "CANopen indicators"
+	help
+	  Enable support for CANopen LED indicators (CiA303-3).
+
 endif # CANOPEN
