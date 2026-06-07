@@ -1,0 +1,22 @@
+common:
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim
+    - native_sim/native/64
+  tags:
+    - can
+    - canopen
+tests:
+  canbus.canopen.indicators:
+    extra_args:
+      - CONFIG_CANOPEN_INDICATORS_STATUS_LED_SUPPORT=y
+      - CONFIG_CANOPEN_INDICATORS_MULTICOLOR_LED_SUPPORT=y
+  canbus.canopen.indicators.no_status_led:
+    extra_args:
+      - CONFIG_CANOPEN_INDICATORS_STATUS_LED_SUPPORT=n
+  canbus.canopen.indicators.no_multicolor:
+    extra_args:
+      - CONFIG_CANOPEN_INDICATORS_STATUS_LED_SUPPORT=n
+      - CONFIG_CANOPEN_INDICATORS_MULTICOLOR_LED_SUPPORT=n
