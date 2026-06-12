@@ -1,0 +1,37 @@
+sample:
+  name: CANopen indicators sample
+common:
+  tags:
+    - can
+    - canopen
+  harness: shell
+  harness_config:
+    shell_commands:
+      - command: "indicators set red on"
+        expected: "setting red indicator state to on"
+      - command: "indicators set green on"
+        expected: "setting green indicator state to on"
+      - command: "indicators set red flicker"
+        expected: "setting red indicator state to flicker"
+      - command: "indicators set green blinking"
+        expected: "setting green indicator state to blinking"
+      - command: "indicators set red single"
+        expected: "setting red indicator state to single"
+      - command: "indicators set green double"
+        expected: "setting green indicator state to double"
+      - command: "indicators set red triple"
+        expected: "setting red indicator state to triple"
+      - command: "indicators set green quadruple"
+        expected: "setting green indicator state to quadruple"
+      - command: "indicators set both off"
+        expected: "setting both indicator states to off"
+tests:
+  sample.canopen.indicators.native:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim
+      - native_sim/native/64
+    extra_configs:
+      - arch:posix:CONFIG_UART_NATIVE_PTY_0_ON_STDINOUT=y
