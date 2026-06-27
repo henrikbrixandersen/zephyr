@@ -11,6 +11,8 @@
 #include <zephyr/kernel.h>
 #include <zephyr/shell/shell.h>
 
+#include "sample_canopen_leds.h"
+
 struct indicators_shell_state_mapping {
 	const char *name;
 	enum canopen_indicator_state state;
@@ -34,22 +36,6 @@ static const char * const indicators_shell_names[] = {
 	"green",
 	"both",
 };
-
-#if DT_HAS_ALIAS(canopen_status_led)
-/* Dedicated bicolor CANopen "status" LED */
-struct led_dt_spec red_led = LED_DT_SPEC_GET(DT_ALIAS(canopen_status_led));
-struct led_dt_spec green_led = LED_DT_SPEC_GET(DT_ALIAS(canopen_status_led));
-#elif (DT_HAS_ALIAS(canopen_error_led) && DT_HAS_ALIAS(canopen_run_led))
-/* Dedicated red CANopen "error" LED + green CANopen "run" LED */
-struct led_dt_spec red_led = LED_DT_SPEC_GET(DT_ALIAS(canopen_error_led));
-struct led_dt_spec green_led = LED_DT_SPEC_GET(DT_ALIAS(canopen_run_led));
-#elif (DT_NODE_EXISTS(DT_NODELABEL(red_led)) && DT_NODE_EXISTS(DT_NODELABEL(green_led)))
-/* Red LED + green LED */
-struct led_dt_spec red_led = LED_DT_SPEC_GET(DT_NODELABEL(red_led));
-struct led_dt_spec green_led = LED_DT_SPEC_GET(DT_NODELABEL(green_led));
-#else
-#error "Required LEDs not present in devicetree"
-#endif
 
 struct canopen_indicators indicators;
 

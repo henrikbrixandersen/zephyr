@@ -52,11 +52,9 @@ struct canopen {
 	struct canopen_sdo_server *sdo_servers;
 	/** Number of SDO objects. */
 	uint8_t num_sdo_servers;
-#ifdef CONFIG_CANOPEN_INDICATORS_AUTOMATIC_INITIALISATION
+#ifdef CONFIG_CANOPEN_INDICATORS
 	struct canopen_indicators indicators;
-	struct led_dt_spec red_led;
-	struct led_dt_spec green_led;
-#endif /* CONFIG_CANOPEN_INDICATORS_AUTOMATIC_INITIALISATION */
+#endif /* CONFIG_CANOPEN_INDICATORS */
 };
 
 /**
@@ -67,11 +65,15 @@ struct canopen {
  * @param co Pointer to the CANopen protocol structure.
  * @param od Pointer to the CANopen object dictionary.
  * @param can Pointer to the device structure for the CAN driver instance.
+ * @param red_led Pointer to the red LED as specified in devicetree.
+ * @param green_led Pointer to the green LED as specified in devicetree.
  * @param node_id CANopen node-ID.
- *
  * @return 0 on success, negative errno value on failure.
+ *
+ * @see canopen_indicators_init()
  */
 int canopen_init(struct canopen *co, const struct canopen_od *od, const struct device *can,
+		 const struct led_dt_spec *red_led, const struct led_dt_spec *green_led,
 		 uint8_t node_id);
 
 /**

@@ -21,6 +21,7 @@ static struct k_work_q canopen_work_q;
 #endif /* CONFIG_CANOPEN_USE_DEDICATED_WORKQUEUE */
 
 int canopen_init(struct canopen *co, const struct canopen_od *od, const struct device *can,
+		 const struct led_dt_spec *red_led, const struct led_dt_spec *green_led,
 		 uint8_t node_id)
 {
 	struct k_work_q *work_q;
@@ -72,14 +73,32 @@ int canopen_init(struct canopen *co, const struct canopen_od *od, const struct d
 		}
 	}
 
-#ifdef CONFIG_CANOPEN_INDICATORS_AUTOMATIC_INITIALISATION
+#ifdef CONFIG_CANOPEN_INDICATORS
+	/* TODO: allow red_led and green_led to be absent for this instance */
+	/* TODO: allow offloading indicators to a different workq to cater for slow LEDs */
+	err = canopen_indicators_init(&co->indicators, work_q, red_led, green_led);
+	if (err != 0) {
+		LOG_ERR("failed to initialize CANopen indicators (err %d)", err);
+		return err;
+	}
 
-#endif /* CONFIG_CANOPEN_INDICATORS_AUTOMATIC_INITIALISATION */
+	/* TODO: register callbacks for controlling indicators */
+#endif /* CONFIG_CANOPEN_INDICATORS */
 
 	return 0;
 }
 
 int canopen_enable(struct canopen *co)
 {
+#ifdef CONFIG_CANOPEN_INDICATORS
+	int err;
+
+	/* TODO: only initialize indicators if present */
+	err = canopen_indicators_enable(&co->indicators);
+	if (err != 0) {
+		return err;
+	}
+#endif /* CONFIG_CANOPEN_INDICATORS */
+
 	return canopen_nmt_enable(&co->nmt);
 }

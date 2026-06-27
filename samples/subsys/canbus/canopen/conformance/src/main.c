@@ -9,6 +9,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 
+#include "sample_canopen_leds.h"
 #include "objdict.h"
 
 LOG_MODULE_REGISTER(app, CONFIG_CANOPEN_LOG_LEVEL);
@@ -22,10 +23,6 @@ static void state_callback(struct canopen_nmt *nmt, struct canopen_nmt_state_cal
 {
 	LOG_INF("NMT state: %s, node-ID: %d", canopen_nmt_state_str(state), node_id);
 }
-
-struct led_dt_spec red_led = LED_DT_SPEC_GET(DT_ALIAS(led3));
-struct led_dt_spec green_led = LED_DT_SPEC_GET(DT_ALIAS(led2));
-struct canopen_indicators indicators;
 
 int main(void)
 {
@@ -41,7 +38,7 @@ int main(void)
 	co.sdo_servers = &sdo_server;
 	co.num_sdo_servers = 1U;
 
-	err = canopen_init(&co, &objdict, can, CONFIG_SAMPLE_CANOPEN_NODE_ID);
+	err = canopen_init(&co, &objdict, can, &red_led, &green_led, CONFIG_SAMPLE_CANOPEN_NODE_ID);
 	if (err != 0) {
 		LOG_ERR("failed to initialize the CANopen protocol stack (err %d)", err);
 		return err;
@@ -65,32 +62,6 @@ int main(void)
 	err = canopen_enable(&co);
 	if (err != 0) {
 		LOG_ERR("failed to enable the CANopen protocol stack (err %d)", err);
-		return err;
-	}
-
-	/* TODO: remove test code */
-
-	err = canopen_indicators_init(&indicators, &k_sys_work_q, &red_led, &green_led);
-	if (err != 0) {
-		LOG_ERR("failed to initialise CANopen indicators (err %d)", err);
-		return err;
-	}
-
-	err = canopen_indicators_enable(&indicators);
-	if (err != 0) {
-		LOG_ERR("failed to enable CANopen indicators (err %d)", err);
-		return err;
-	}
-
-	err = canopen_indicators_set_red_state(&indicators, CANOPEN_INDICATOR_STATE_LED_ON);
-	if (err != 0) {
-		LOG_ERR("failed to set red indicator state (err %d)", err);
-		return err;
-	}
-
-	err = canopen_indicators_set_green_state(&indicators, CANOPEN_INDICATOR_STATE_LED_BLINKING);
-	if (err != 0) {
-		LOG_ERR("failed to set green indicator state (err %d)", err);
 		return err;
 	}
 

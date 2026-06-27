@@ -5,6 +5,8 @@ cmake_minimum_required(VERSION 3.20.0)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(canopen_conformance)
 
+include(${ZEPHYR_BASE}/samples/subsys/canbus/canopen/common/common.cmake)
+
 # Generate object dictionary headers and implementation files
 include(${ZEPHYR_BASE}/cmake/canopen.cmake NO_POLICY_SCOPE)
 set(od objdict)
