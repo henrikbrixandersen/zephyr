@@ -1,0 +1,26 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Henrik Brix Andersen <henrik@brixandersen.dk>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/led/led.h>
+
+/ {
+	aliases {
+		canopen-error-led = &red_led;
+		canopen-run-led = &green_led;
+	};
+
+	leds {
+		red_led: red_led {
+			gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
+			label = "Red LED";
+		};
+
+		green_led: green_led {
+			gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
+			label = "Green LED";
+		};
+	};
+};
