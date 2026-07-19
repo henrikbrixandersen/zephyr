@@ -1,0 +1,81 @@
+sample:
+  name: CANopen indicators sample
+common:
+  tags:
+    - can
+    - canopen
+  harness: shell
+  harness_config:
+    shell_commands:
+      - command: "indicators led red on"
+        expected: "setting red LED indicators state to on"
+      - command: "indicators led green on"
+        expected: "setting green LED indicators state to on"
+      - command: "indicators led red flickering"
+        expected: "setting red LED indicators state to flickering"
+      - command: "indicators led green blinking"
+        expected: "setting green LED indicators state to blinking"
+      - command: "indicators led red single"
+        expected: "setting red LED indicators state to single"
+      - command: "indicators led green double"
+        expected: "setting green LED indicators state to double"
+      - command: "indicators led red triple"
+        expected: "setting red LED indicators state to triple"
+      - command: "indicators led green quadruple"
+        expected: "setting green LED indicators state to quadruple"
+      - command: "indicators led both off"
+        expected: "setting both LED indicators states to off"
+      - command: "indicators set autobitrate-or-lss"
+        expected: "setting indicators state autobitrate-or-lss"
+      - command: "indicators clear autobitrate-or-lss"
+        expected: "clearing indicators state autobitrate-or-lss"
+      - command: "indicators set invalid-configuration"
+        expected: "setting indicators state invalid-configuration"
+      - command: "indicators clear invalid-configuration"
+        expected: "clearing indicators state invalid-configuration"
+      - command: "indicators set warning-limit-reached"
+        expected: "setting indicators state warning-limit-reached"
+      - command: "indicators clear warning-limit-reached"
+        expected: "clearing indicators state warning-limit-reached"
+      - command: "indicators set error-control-event"
+        expected: "setting indicators state error-control-event"
+      - command: "indicators clear error-control-event"
+        expected: "clearing indicators state error-control-event"
+      - command: "indicators set sync-error"
+        expected: "setting indicators state sync-error"
+      - command: "indicators clear sync-error"
+        expected: "clearing indicators state sync-error"
+      - command: "indicators set event-timer-error"
+        expected: "setting indicators state event-timer-error"
+      - command: "indicators clear event-timer-error"
+        expected: "clearing indicators state event-timer-error"
+      - command: "indicators set bus-off"
+        expected: "setting indicators state bus-off"
+      - command: "indicators clear bus-off"
+        expected: "clearing indicators state bus-off"
+      - command: "indicators set pre-operational"
+        expected: "setting indicators state pre-operational"
+      - command: "indicators clear pre-operational"
+        expected: "clearing indicators state pre-operational"
+      - command: "indicators set stopped"
+        expected: "setting indicators state stopped"
+      - command: "indicators clear stopped"
+        expected: "clearing indicators state stopped"
+      - command: "indicators set program-download"
+        expected: "setting indicators state program-download"
+      - command: "indicators clear program-download"
+        expected: "clearing indicators state program-download"
+      - command: "indicators set operational"
+        expected: "setting indicators state operational"
+      - command: "indicators clear operational"
+        expected: "clearing indicators state operational"
+tests:
+  sample.canbus.canopen.indicators.native:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim
+      - native_sim/native/64
+    extra_configs:
+      - arch:posix:CONFIG_UART_NATIVE_PTY_0_ON_STDINOUT=y
