@@ -225,6 +225,11 @@
 		compatible = "zephyr,can-loopback";
 	};
 
+	can_loopback1: can_loopback1 {
+		status = "okay";
+		compatible = "zephyr,can-loopback";
+	};
+
 	can0: can {
 		status = "disabled";
 		compatible = "zephyr,native-linux-can";
